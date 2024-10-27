@@ -1,11 +1,12 @@
 // src/pages/api/upload.ts
-import type { NextApiRequest, NextApiResponse } from 'next';
+import { NextApiRequest, NextApiResponse } from 'next';
 import multer from 'multer';
 import path from 'path';
 import { customAlphabet } from 'nanoid';
 import bcrypt from 'bcryptjs';
 import { query } from '@/lib/db';
 
+// Configure multer storage
 const storage = multer.diskStorage({
   destination: path.join(process.cwd(), 'public', 'uploads'),
   filename: (req, file, cb) => {
@@ -15,6 +16,7 @@ const storage = multer.diskStorage({
   },
 });
 
+// Create the multer instance
 const upload = multer({ storage });
 
 export const config = {
@@ -23,6 +25,17 @@ export const config = {
   },
 };
 
+// Define the custom request type with the file property
+interface MulterRequest extends NextApiRequest {
+  file: Express.Multer.File; // Property for the uploaded file
+}
+
+// Create a function to handle the multer middleware
+const uploadMiddleware = (req: NextApiRequest, res: NextApiResponse, next: (err?: any) => void) => {
+  upload.single('image')(req as any, res as any, next);
+};
+
+// Create an instance of nanoid
 const nanoid = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', 8);
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -30,13 +43,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Método não permitido' });
   }
 
-  upload.single('image')(req as any, res as any, async (err) => {
+  // Use the custom middleware
+  uploadMiddleware(req, res, async (err) => {
     if (err) {
       console.error('Error during file upload:', err);
       return res.status(500).json({ error: 'Erro ao processar o upload' });
     }
 
-    const file = req.file;
+    const file = (req as MulterRequest).file; // Use the new MulterRequest type
 
     if (!file) {
       return res.status(400).json({ error: 'Nenhuma imagem foi enviada.' });
@@ -63,10 +77,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       );
 
       const link = `/s/${file.filename}`;
-      return res.status(200).json({ link });
+      return res.status(200).json({ link }); // Ensure a response is sent
     } catch (dbError) {
       console.error('Erro ao inserir no banco de dados:', dbError);
       return res.status(500).json({ error: 'Erro ao salvar informações da imagem no banco de dados' });
     }
   });
 }
+  

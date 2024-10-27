@@ -1,3 +1,4 @@
+// src/pages/s/[id].tsx
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
@@ -82,7 +83,7 @@ const ImagePage = () => {
         <title>縫い付けられた唇 • {id}</title>
       </Head>
       <motion.div className="flex items-center justify-center min-h-screen p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
-        <div className="shadow-md rounded-lg p-8 w-full max-w-lg flex flex-col items-center justify-center">
+        <div className="shadow-md rounded-lg flex flex-col items-center justify-center">
           {isPrivate && !isAuthenticated ? (
             <div className="border border-darkcarbon p-6 rounded-lg w-96 grid">
               <form onSubmit={handlePasswordSubmit}>
@@ -98,7 +99,7 @@ const ImagePage = () => {
           ) : (
             <motion.div className="flex items-center justify-center h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
               {imageDimensions && (
-                <Image src={imageUrl} alt={id as string} width={imageDimensions.width} height={imageDimensions.height} className="max-w-full object-contain"/>
+                <Image src={imageUrl} alt={id as string} width={imageDimensions.width} height={imageDimensions.height} unoptimized={true} className="max-w-full object-contain"/>
               )}
             </motion.div>
           )}

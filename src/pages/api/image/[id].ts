@@ -12,7 +12,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const result = await query('SELECT private, filepath FROM images WHERE filename = $1', [id]);
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Imagem não encontrada' });
+      return res.status(404).json({ error: 'Image not found' });
     }
 
     const { private: isPrivate, filepath } = result.rows[0];
@@ -24,8 +24,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       return res.status(200).json({ private: isPrivate, filepath, width, height });
     } catch (err) {
-      console.error('Erro ao processar a imagem:', err);
-      return res.status(500).json({ error: 'Erro ao processar a imagem.' });
+      console.error('Error processing image:', err);
+      return res.status(500).json({ error: 'Error processing the image.' });
     }
   }
 
@@ -34,7 +34,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const result = await query('SELECT password FROM images WHERE filename = $1', [id]);
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Imagem não encontrada' });
+      return res.status(404).json({ error: 'Image not found' });
     }
 
     const { password: hashedPassword } = result.rows[0];
@@ -43,5 +43,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(200).json({ accessGranted });
   }
 
-  return res.status(405).json({ error: 'Método não permitido' });
+  return res.status(405).json({ error: 'Method not allowed' });
 }
