@@ -4,6 +4,7 @@ import { query } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import sharp from 'sharp';
 import path from 'path';
+import fs from 'fs';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
@@ -16,12 +17,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const { private: isPrivate, filepath } = result.rows[0];
-    
     const filePath = path.join(process.cwd(), 'public', 'uploads', filepath);
+
+    // Log the file path
+    console.log(`File path: ${filePath}`);
+
+    // Check if the file exists
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: '画像ファイルが見つかりません。' });
+    }
 
     try {
       const { width, height } = await sharp(filePath).metadata();
-      
       return res.status(200).json({ private: isPrivate, filepath, width, height });
     } catch (err) {
       console.error('画像処理中にエラーが発生しました:', err);
