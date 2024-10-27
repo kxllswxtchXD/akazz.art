@@ -1,0 +1,31 @@
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Varela+Round&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #000000;
+  --darkcharcoal: #0A0A0A;
+  --darkcarbon: #1c1c1c;
+  --blackonyx: #111111;
+  --grayshadow: #1F1F1F;
+  --steelgray: #333333;
+  --mediumslate: #4d4d4d;
+  --stormgray: #B4B7BD;
+  --whitepure: #ffffff;
+  --silverlight: #D0D2D6;
+  --ibackground: #0e0e0e;
+}
+
+::selection {
+  background-color: transparent;
+}
+
+body,
+html {
+  font-family: "Lexend Round", sans-serif;
+  background: var(--ibackground);
+  color: var(--silverlight);
+  cursor: default;
+}
