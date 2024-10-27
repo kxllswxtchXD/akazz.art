@@ -21,6 +21,10 @@ export default function App({ Component, pageProps }: AppProps) {
     <>
       <Head>
         <title>縫い付けられた唇</title>
+        <meta property="og:site_name" content="Nuitsukera" />
+        <meta property="og:description" content="ステッチされた唇 - 新しい画像ホスティング プラットフォーム" />
+        <meta name="theme-color" content="#0e0e0e" />
+        <meta property="og:url" content="https://i.akazz.art/" />
         <link rel="icon" href="/assets/favicon.ico" />
       </Head>
       <Component {...pageProps} />
