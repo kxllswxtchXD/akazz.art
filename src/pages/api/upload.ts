@@ -1,26 +1,26 @@
-// src/pages/api/upload.ts
-import { IncomingForm, File } from 'formidable';
+import { IncomingForm, File, Fields, Files } from 'formidable';
 import fs from 'fs';
 import path from 'path';
 import { promisify } from 'util';
 import { customAlphabet } from 'nanoid';
 import bcrypt from 'bcryptjs';
 import { query } from '@/lib/db';
+import { NextApiRequest, NextApiResponse } from 'next';
 
 const nanoid = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', 8);
 
-// fsの関数をプロミス化
+// Promisify fs functions
 const mkdir = promisify(fs.mkdir);
 const rename = promisify(fs.rename);
 
 export const config = {
   api: {
-    bodyParser: false, // ネイティブのbody parserを無効化
+    bodyParser: false, // Disable built-in body parser
   },
 };
 
-// フォームデータを解析する関数
-const parseForm = (req: any): Promise<{ fields: any; files: any }> => {
+// Define a type-safe parseForm function
+const parseForm = (req: NextApiRequest): Promise<{ fields: Fields; files: Files }> => {
   const form = new IncomingForm({ multiples: false });
 
   return new Promise((resolve, reject) => {
@@ -31,7 +31,7 @@ const parseForm = (req: any): Promise<{ fields: any; files: any }> => {
   });
 };
 
-export default async function handler(req: any, res: any) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: '許可されていないメソッドです' });
   }
@@ -39,18 +39,16 @@ export default async function handler(req: any, res: any) {
   try {
     const { fields, files } = await parseForm(req);
 
-    console.log('Files:', files); // ファイル内容の確認用
-    console.log('Fields:', fields); // フィールド内容の確認用
+    console.log('Files:', files);
+    console.log('Fields:', fields);
 
-    // ファイルを正しく取得
-    const fileArray = files.image;
-    if (!fileArray || fileArray.length === 0) {
+    const fileArray = files.image as File[] | File | undefined;
+    if (!fileArray) {
       return res.status(400).json({ error: 'ファイルが送信されていません。' });
     }
 
-    const file = fileArray[0] as File;
+    const file = Array.isArray(fileArray) ? fileArray[0] : fileArray;
 
-    // アップロードディレクトリが存在しない場合は作成
     const uploadDir = path.join(process.cwd(), 'public', 'uploads');
     await mkdir(uploadDir, { recursive: true });
 
@@ -58,7 +56,6 @@ export default async function handler(req: any, res: any) {
     const newFilename = `${nanoid()}${ext}`;
     const newFilePath = path.join(uploadDir, newFilename);
 
-    // ファイルを公開ディレクトリに移動
     await rename(file.filepath, newFilePath);
 
     const isPrivate = fields.private?.[0] === 'true';
