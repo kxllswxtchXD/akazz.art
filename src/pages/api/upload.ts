@@ -1,3 +1,5 @@
+// src/pages/api/upload.ts
+
 import { IncomingForm, File, Fields, Files } from 'formidable';
 import fs from 'fs';
 import path from 'path';
@@ -9,17 +11,15 @@ import { NextApiRequest, NextApiResponse } from 'next';
 
 const nanoid = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', 8);
 
-// Promisify fs functions
 const mkdir = promisify(fs.mkdir);
 const rename = promisify(fs.rename);
 
 export const config = {
   api: {
-    bodyParser: false, // Disable built-in body parser
+    bodyParser: false,
   },
 };
 
-// Define a type-safe parseForm function
 const parseForm = (req: NextApiRequest): Promise<{ fields: Fields; files: Files }> => {
   const form = new IncomingForm({ multiples: false });
 
@@ -49,7 +49,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const file = Array.isArray(fileArray) ? fileArray[0] : fileArray;
 
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+    // Determine upload directory based on environment
+    const uploadDir = process.env.NODE_ENV === 'production'
+      ? path.join('/tmp', 'uploads') // Temporary directory for production
+      : path.join(process.cwd(), 'public', 'uploads'); // Local directory for development
+
     await mkdir(uploadDir, { recursive: true });
 
     const ext = path.extname(file.originalFilename || '');
