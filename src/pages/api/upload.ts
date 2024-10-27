@@ -6,7 +6,7 @@ import { customAlphabet } from 'nanoid';
 import bcrypt from 'bcryptjs';
 import { query } from '@/lib/db';
 
-// Configure multer storage
+// Multerストレージの設定
 const storage = multer.diskStorage({
   destination: path.join(process.cwd(), 'public', 'uploads'),
   filename: (req, file, cb) => {
@@ -16,44 +16,46 @@ const storage = multer.diskStorage({
   },
 });
 
-// Create the multer instance
+// Multerインスタンスの作成
 const upload = multer({ storage });
 
+// API設定
 export const config = {
   api: {
     bodyParser: false,
   },
 };
 
-// Define the custom request type with the file property
+// MulterRequestインターフェースの定義
 interface MulterRequest extends NextApiRequest {
-  file: Express.Multer.File; // Property for the uploaded file
+  file: Express.Multer.File; // アップロードされたファイルのプロパティ
 }
 
-// Create a function to handle the multer middleware
-const uploadMiddleware = (req: NextApiRequest, res: NextApiResponse, next: (err?: any) => void) => {
-  upload.single('image')(req as any, res as any, next);
+// Multerミドルウェアを処理する関数
+const uploadMiddleware = (req: MulterRequest, res: NextApiResponse, next: (err?: unknown) => void) => {
+  upload.single('image')(req as any, res as any, next); // any型として指定
 };
 
-// Create an instance of nanoid
+// nanoidのインスタンスを作成
 const nanoid = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', 8);
 
+// アップロードエンドポイントのハンドラー関数
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Método não permitido' });
+    return res.status(405).json({ error: '許可されていないメソッド' });
   }
 
-  // Use the custom middleware
-  uploadMiddleware(req, res, async (err) => {
+  // カスタムミドルウェアを使用
+  uploadMiddleware(req as MulterRequest, res, async (err) => {
     if (err) {
-      console.error('Error during file upload:', err);
-      return res.status(500).json({ error: 'Erro ao processar o upload' });
+      console.error('ファイルアップロード中のエラー:', err);
+      return res.status(500).json({ error: 'アップロード処理中のエラー' });
     }
 
-    const file = (req as MulterRequest).file; // Use the new MulterRequest type
+    const file = (req as MulterRequest).file; // 新しいMulterRequest型を使用
 
     if (!file) {
-      return res.status(400).json({ error: 'Nenhuma imagem foi enviada.' });
+      return res.status(400).json({ error: '画像が送信されていません。' });
     }
 
     const isPrivate = req.body.private === 'true';
@@ -64,8 +66,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       try {
         hashedPassword = await bcrypt.hash(password, 10);
       } catch (hashError) {
-        console.error('Error hashing password:', hashError);
-        return res.status(500).json({ error: 'Erro ao processar a senha' });
+        console.error('パスワードハッシュ処理中のエラー:', hashError);
+        return res.status(500).json({ error: 'パスワード処理中のエラー' });
       }
     }
 
@@ -77,11 +79,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       );
 
       const link = `/s/${file.filename}`;
-      return res.status(200).json({ link }); // Ensure a response is sent
+      return res.status(200).json({ link }); // 応答が送信されることを確認
     } catch (dbError) {
-      console.error('Erro ao inserir no banco de dados:', dbError);
-      return res.status(500).json({ error: 'Erro ao salvar informações da imagem no banco de dados' });
+      console.error('データベースへの挿入中のエラー:', dbError);
+      return res.status(500).json({ error: 'データベースに画像情報を保存中のエラー' });
     }
   });
 }
-  

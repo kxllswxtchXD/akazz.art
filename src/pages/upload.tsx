@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import UploadForm from "@/components/Upload/Japanese/Form"; 
+import UploadForm from "@/components/Upload/Form"; 
 import Head from "next/head";
 
 const UploadPage = () => { 
