@@ -1,80 +1,90 @@
 // src/pages/api/upload.ts
-import { NextApiRequest, NextApiResponse } from 'next';
-import multer from 'multer';
+import { IncomingForm, File } from 'formidable';
+import fs from 'fs';
 import path from 'path';
+import { promisify } from 'util';
 import { customAlphabet } from 'nanoid';
 import bcrypt from 'bcryptjs';
 import { query } from '@/lib/db';
-import { promises as fs } from 'fs';
 
-// nanoidのインスタンスを作成
 const nanoid = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', 8);
 
-// Multerストレージの設定
-const storage = multer.diskStorage({
-  destination: path.join(process.cwd(), 'public', 'uploads'),
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname || '');
-    const newFilename = `${nanoid()}${ext}`;
-    cb(null, newFilename);
-  },
-});
+// fsの関数をプロミス化
+const mkdir = promisify(fs.mkdir);
+const rename = promisify(fs.rename);
 
-const upload = multer({ storage });
-
-// APIの設定
 export const config = {
   api: {
-    bodyParser: false, // 必ずfalseにする（ファイルの解析をMulterに任せる）
+    bodyParser: false, // ネイティブのbody parserを無効化
   },
 };
 
-// ヘルパー関数: ファイルアップロードをPromiseでラップ
-const handleFileUpload = (req: NextApiRequest): Promise<Express.Multer.File> =>
-  new Promise((resolve, reject) => {
-    upload.single('image')(req as any, {} as any, (err: any) => {
-      if (err) return reject(err);
-      const file = (req as any).file;
-      if (!file) return reject(new Error('画像が送信されていません。'));
-      resolve(file);
+// フォームデータを解析する関数
+const parseForm = (req: any): Promise<{ fields: any; files: any }> => {
+  const form = new IncomingForm({ multiples: false });
+
+  return new Promise((resolve, reject) => {
+    form.parse(req, (err, fields, files) => {
+      if (err) reject(err);
+      else resolve({ fields, files });
     });
   });
+};
 
-// アップロードエンドポイントのハンドラー関数
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: '許可されていないメソッド' });
+    return res.status(405).json({ error: '許可されていないメソッドです' });
   }
 
   try {
-    // ファイルのアップロードを処理
-    const file = await handleFileUpload(req);
+    const { fields, files } = await parseForm(req);
 
-    const isPrivate = req.body.private === 'true';
-    const password = req.body.password;
+    console.log('Files:', files); // ファイル内容の確認用
+    console.log('Fields:', fields); // フィールド内容の確認用
+
+    // ファイルを正しく取得
+    const fileArray = files.image;
+    if (!fileArray || fileArray.length === 0) {
+      return res.status(400).json({ error: 'ファイルが送信されていません。' });
+    }
+
+    const file = fileArray[0] as File;
+
+    // アップロードディレクトリが存在しない場合は作成
+    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+    await mkdir(uploadDir, { recursive: true });
+
+    const ext = path.extname(file.originalFilename || '');
+    const newFilename = `${nanoid()}${ext}`;
+    const newFilePath = path.join(uploadDir, newFilename);
+
+    // ファイルを公開ディレクトリに移動
+    await rename(file.filepath, newFilePath);
+
+    const isPrivate = fields.private?.[0] === 'true';
+    const password = fields.password?.[0];
 
     let hashedPassword: string | null = null;
     if (isPrivate && password) {
       try {
         hashedPassword = await bcrypt.hash(password, 10);
-      } catch (hashError) {
-        console.error('パスワードハッシュ処理中のエラー:', hashError);
-        return res.status(500).json({ error: 'パスワード処理中のエラー' });
+      } catch (err) {
+        console.error('パスワードのハッシュ化中にエラーが発生しました:', err);
+        return res.status(500).json({ error: 'パスワードの処理中にエラーが発生しました。' });
       }
     }
 
-    const filenameWithoutExt = path.basename(file.filename, path.extname(file.filename));
+    const filenameWithoutExt = path.basename(newFilename, ext);
 
-    // データベースに画像の情報を保存
     await query(
       'INSERT INTO images (filename, filepath, private, password) VALUES ($1, $2, $3, $4)',
-      [filenameWithoutExt, file.filename, isPrivate, hashedPassword || null]
+      [filenameWithoutExt, newFilename, isPrivate, hashedPassword || null]
     );
 
-    const link = `/s/${file.filename}`;
+    const link = `/s/${newFilename}`;
     return res.status(200).json({ link });
   } catch (error) {
     console.error('アップロードエラー:', error);
-    return res.status(500).json({ error: 'アップロード処理中のエラーが発生しました。' });
+    return res.status(500).json({ error: 'アップロード処理中にエラーが発生しました。' });
   }
 }
