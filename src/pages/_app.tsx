@@ -3,6 +3,7 @@ import type { AppProps } from "next/app";
 import Head from "next/head";
 import { useEffect } from "react";
 import { useRouter } from "next/router";
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
@@ -27,6 +28,7 @@ export default function App({ Component, pageProps }: AppProps) {
         <meta property="og:url" content="https://i.akazz.art/" />
         <link rel="icon" href="/assets/favicon.ico" />
       </Head>
+      <SpeedInsights/>
       <Component {...pageProps} />
     </>
   );
