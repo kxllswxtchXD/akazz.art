@@ -1,8 +1,8 @@
 // src/pages/s/[id].tsx
+
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import Image from 'next/image';
 import Icons from '@/components/Icons';
 import Loading from '@/components/Loading';
 import { motion } from 'framer-motion';
@@ -10,7 +10,7 @@ import Head from 'next/head';
 
 interface ImageResponse {
   private: boolean;
-  filepath: string;
+  base64: string;
   width: number;
   height: number;
 }
@@ -37,10 +37,10 @@ const ImagePage = () => {
       try {
         console.log(`API に ID を問い合わせる: ${id}`);
         const response = await axios.get<ImageResponse>(`/api/image/${id}`);
-        const { private: isPrivateImage, filepath, width, height } = response.data;
-        
+        const { private: isPrivateImage, base64, width, height } = response.data;
+
         setIsPrivate(isPrivateImage);
-        setImageUrl(`/uploads/${filepath}`);
+        setImageUrl(`data:image/jpeg;base64,${base64}`); // Set the base64 image URL
         setImageDimensions({ width, height });
       } catch (error) {
         console.error('画像の詳細を取得中にエラーが発生しました:', error);
@@ -60,7 +60,7 @@ const ImagePage = () => {
       const response = await axios.post<{ accessGranted: boolean }>(`/api/image/${id}`, { password });
       if (response.data.accessGranted) {
         const { data } = await axios.get<ImageResponse>(`/api/image/${id}`);
-        setImageUrl(`/uploads/${data.filepath}`);
+        setImageUrl(`data:image/jpeg;base64,${data.base64}`); // Set the base64 image URL
         setIsPrivate(data.private);
         setIsAuthenticated(true);
         setImageDimensions({ width: data.width, height: data.height });
@@ -114,12 +114,11 @@ const ImagePage = () => {
           ) : (
             <motion.div className="flex items-center justify-center h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
               {imageDimensions && (
-                <Image 
+                <img 
                   src={imageUrl} 
                   alt={id as string} 
                   width={imageDimensions.width} 
                   height={imageDimensions.height} 
-                  unoptimized={true} 
                   className="max-w-full object-contain"
                 />
               )}

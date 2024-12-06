@@ -2,7 +2,6 @@
 
 import { IncomingForm, File, Fields, Files } from 'formidable';
 import fs from 'fs';
-import path from 'path';
 import { promisify } from 'util';
 import { customAlphabet } from 'nanoid';
 import bcrypt from 'bcryptjs';
@@ -11,8 +10,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 
 const nanoid = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', 8);
 
-const mkdir = promisify(fs.mkdir);
-const rename = promisify(fs.rename);
+const readFile = promisify(fs.readFile);
 
 export const config = {
   api: {
@@ -20,6 +18,7 @@ export const config = {
   },
 };
 
+// Parse the form data, including files
 const parseForm = (req: NextApiRequest): Promise<{ fields: Fields; files: Files }> => {
   const form = new IncomingForm({ multiples: false });
 
@@ -49,18 +48,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const file = Array.isArray(fileArray) ? fileArray[0] : fileArray;
 
-    // Determine upload directory based on environment
-    const uploadDir = process.env.NODE_ENV === 'production'
-      ? path.join('/tmp', 'uploads') // Temporary directory for production
-      : path.join(process.cwd(), 'public', 'uploads'); // Local directory for development
-
-    await mkdir(uploadDir, { recursive: true });
-
-    const ext = path.extname(file.originalFilename || '');
-    const newFilename = `${nanoid()}${ext}`;
-    const newFilePath = path.join(uploadDir, newFilename);
-
-    await rename(file.filepath, newFilePath);
+    // Read the file as a Buffer
+    const fileBuffer = await readFile(file.filepath);
+    const base64File = fileBuffer.toString('base64');
 
     const isPrivate = fields.private?.[0] === 'true';
     const password = fields.password?.[0];
@@ -75,14 +65,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
 
-    const filenameWithoutExt = path.basename(newFilename, ext);
-
+    const filename = `${nanoid()}`;
+    // Insert the image into the database, storing it as base64
     await query(
-      'INSERT INTO images (filename, filepath, private, password) VALUES ($1, $2, $3, $4)',
-      [filenameWithoutExt, newFilename, isPrivate, hashedPassword || null]
+      'INSERT INTO images (filename, base64, private, password) VALUES ($1, $2, $3, $4)',
+      [filename, base64File, isPrivate, hashedPassword || null]
     );
 
-    const link = `/s/${newFilename}`;
+    const link = `/${filename}`;
     return res.status(200).json({ link });
   } catch (error) {
     console.error('アップロードエラー:', error);

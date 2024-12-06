@@ -1,5 +1,5 @@
 {
-  "name": "i.akazz.art",
+  "name": "akazz.art",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@vercel/speed-insights": "^1.0.14",
+    "akazz.art": "file:",
     "axios": "^1.7.7",
     "bcryptjs": "^2.4.3",
     "formidable": "^3.5.2",
