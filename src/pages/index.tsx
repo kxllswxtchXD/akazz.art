@@ -6,13 +6,19 @@ export default function Home() {
   return (
     <>
       <NextSeo
-        title="縫い付けられた唇 • Upload" // Título da página
-        description="ステッチされた唇 - 新しい画像ホスティング プラットフォーム" // Descrição
+        title="縫い付けられた唇 • Upload" // Título fixo para a página
+        description="ステッチされた唇 - 新しい画像ホスティング プラットフォーム" // Descrição fixa
         themeColor="#2b2d31" // Tema da página
         openGraph={{
           site_name: "Nuitsukera", // Nome do site
-          description: "ステッチされた唇 - 新しい画像ホスティング プラットフォーム",
+          description: "ステッチされた唇 - 新しい画像ホスティング プラットフォーム", // Descrição para Open Graph
           url: "https://akazz.art/", // URL base
+          images: [
+            {
+              url: "/default.jpg", // Imagem padrão
+              alt: "Image description", // Texto alternativo da imagem
+            },
+          ],
         }}
         additionalLinkTags={[
           {

@@ -5,6 +5,7 @@ import Icons from "@/components/Icons";
 import Loading from "@/components/Loading";
 import { motion } from "framer-motion";
 import { NextSeo } from "next-seo"; // Importando NextSeo
+import { useAppContext } from "@/context/AppContext";
 
 interface ImageResponse {
   private: boolean;
@@ -28,6 +29,8 @@ const ImagePage = () => {
   } | null>(null);
   const [showPassword, setShowPassword] = useState<boolean>(false);
 
+  const { setSeoData } = useAppContext(); // Atualizando o SEO do contexto
+
   useEffect(() => {
     const fetchImageDetails = async () => {
       if (!id || typeof id !== "string") {
@@ -43,6 +46,13 @@ const ImagePage = () => {
         setIsPrivate(isPrivateImage);
         setImageUrl(`data:image/jpeg;base64,${base64}`);
         setImageDimensions({ width, height });
+
+        // Atualizando os dados de SEO no contexto
+        setSeoData({
+          title: `縫い付けられた唇 • ${id}`,
+          imageUrl: `data:image/jpeg;base64,${base64}`,
+          description: null, // Não estamos usando descrição aqui
+        });
       } catch (error) {
         console.error("画像の詳細を取得中にエラーが発生しました:", error);
         setError("画像が見つかりません。");
@@ -52,7 +62,7 @@ const ImagePage = () => {
     };
 
     fetchImageDetails();
-  }, [id]);
+  }, [id, setSeoData]);
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,16 +94,15 @@ const ImagePage = () => {
   return (
     <>
       <NextSeo
-        title={`縫い付けられた唇 • ${id}`} // SEO específico para esta página
+        title={`縫い付けられた唇 • ${id}`} // Título dinâmico
         themeColor="#2b2d31"
         openGraph={{
-          url: `https://akazz.art/${id}`,
-          title: `縫い付けられた唇 • ${id}`,
-          description: "画像を見るためのパスワードを入力してください。",
+          url: `https://akazz.art/${id}`, // URL dinâmica com base no ID
+          title: `縫い付けられた唇 • ${id}`, // Título dinâmico
           images: [
             {
-              url: imageUrl, // Usa a imagem carregada
-              alt: id ? `Image ${id}` : "Image",
+              url: imageUrl, // Imagem dinâmica
+              alt: `Image ${id}`,
             },
           ],
         }}
@@ -150,10 +159,9 @@ const ImagePage = () => {
               {imageDimensions && (
                 <img
                   src={imageUrl}
-                  alt={id as string}
+                  alt={`Image ${id}`}
                   width={imageDimensions.width}
                   height={imageDimensions.height}
-                  className="max-w-full object-contain"
                 />
               )}
             </motion.div>
