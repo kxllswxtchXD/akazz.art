@@ -1,5 +1,3 @@
-// src/pages/api/image/[id].ts
-
 import { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
 import bcrypt from 'bcryptjs';
@@ -9,16 +7,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   // Handle GET request to fetch image details
   if (req.method === 'GET') {
-    const result = await query('SELECT private, base64 FROM images WHERE filename = $1', [id]);
+    const result = await query('SELECT private, base64, name, description FROM images WHERE filename = $1', [id]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: '画像が見つかりません' });
     }
 
-    const { private: isPrivate, base64 } = result.rows[0];
+    const { private: isPrivate, base64, name, description } = result.rows[0];
 
-    // Respond with image details (base64 content)
-    return res.status(200).json({ private: isPrivate, base64 });
+    // Respond with image details (base64 content, name, and description)
+    return res.status(200).json({ private: isPrivate, base64, name, description });
   }
 
   // Handle POST request for password authentication
