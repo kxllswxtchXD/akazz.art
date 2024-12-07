@@ -1,50 +1,44 @@
-import { NextSeo } from 'next-seo';
-import { useRouter } from 'next/router';
-import { GetServerSideProps } from 'next';
+import "@/styles/globals.css";
+import type { AppProps } from "next/app";
+import Head from "next/head";
+import { useEffect } from "react";
+import { useRouter } from "next/router";
+import { SpeedInsights } from "@vercel/speed-insights/next";
+import { NextSeo } from "next-seo";
 
-export default function Page({ name, description, base64 }: { name: string, description: string, base64: string }) {
+export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
+
+  useEffect(() => {
+    const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isAndroid = /Android/i.test(navigator.userAgent);
+
+    if (isMobile && (isIOS || isAndroid)) {
+      router.push('/unauthorized');
+    }
+  }, [router]);
 
   return (
     <>
       <NextSeo
-        title={name}
-        description={description}
-        canonical={`https://akazz.art/${router.query.id}`}
+        title="縫い付けられた唇"
+        description="ステッチされた唇 - 新しい画像ホスティング プラットフォーム"
+        canonical="https://akazz.art/"
         themeColor="#0e0e0e"
         openGraph={{
-          url: `https://akazz.art/${router.query.id}`,
-          title: name,
-          description: description,
-          images: [
-            {
-              url: `data:image/jpeg;base64,${base64}`,  // Usando base64 para Open Graph
-              alt: name,  // Descrição alternativa
-            },
-          ],
+          url: "https://akazz.art/",
+          title: "縫い付けられた唇",
+          description: "ステッチされた唇 - 新しい画像ホスティング プラットフォーム",
         }}
       />
-      {/* Não há mais exibição de conteúdo na página */}
+      <Head>
+        <meta property="og:site_name" content="Nuitsukera" />
+        <meta name="theme-color" content="#0e0e0e" />
+        <link rel="icon" href="/assets/favicon.ico" />
+      </Head>
+      <SpeedInsights />
+      <Component {...pageProps} />
     </>
   );
 }
-
-// Função para buscar dados da API
-export const getServerSideProps: GetServerSideProps = async ({ params }) => {
-  const res = await fetch(`https://akazz.art/api/image/${params?.id}`);
-  const data = await res.json();
-
-  if (!data.base64) {
-    return {
-      notFound: true,  // Caso a imagem não exista
-    };
-  }
-
-  return {
-    props: {
-      name: data.name,
-      description: data.description,
-      base64: data.base64,
-    },
-  };
-};

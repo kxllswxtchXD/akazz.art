@@ -1,17 +1,18 @@
-// src/pages/s/[id].tsx
-
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import Icons from '@/components/Icons';
 import Loading from '@/components/Loading';
 import { motion } from 'framer-motion';
+import { NextSeo } from 'next-seo';
 
 interface ImageResponse {
   private: boolean;
   base64: string;
   width: number;
   height: number;
+  name: string;
+  description: string;
 }
 
 const ImagePage = () => {
@@ -25,6 +26,8 @@ const ImagePage = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
   const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [name, setName] = useState<string>('');
+  const [description, setDescription] = useState<string>('');
 
   useEffect(() => {
     const fetchImageDetails = async () => {
@@ -36,11 +39,13 @@ const ImagePage = () => {
       try {
         console.log(`API に ID を問い合わせる: ${id}`);
         const response = await axios.get<ImageResponse>(`/api/image/${id}`);
-        const { private: isPrivateImage, base64, width, height } = response.data;
+        const { private: isPrivateImage, base64, width, height, name, description } = response.data;
 
         setIsPrivate(isPrivateImage);
         setImageUrl(`data:image/jpeg;base64,${base64}`); // Set the base64 image URL
         setImageDimensions({ width, height });
+        setName(name);
+        setDescription(description);
       } catch (error) {
         console.error('画像の詳細を取得中にエラーが発生しました:', error);
         setError('画像が見つかりません。');
@@ -78,6 +83,23 @@ const ImagePage = () => {
 
   return (
     <>
+      <NextSeo
+        title={name}
+        description={description}
+        canonical={`https://akazz.art/${id}`}
+        themeColor="#0e0e0e"
+        openGraph={{
+          url: `https://akazz.art/${id}`,
+          title: name,
+          description: description,
+          images: [
+            {
+              url: imageUrl,  // Usando base64 para Open Graph
+              alt: name,  // Descrição alternativa
+            },
+          ],
+        }}
+      />
       <motion.div className="flex items-center justify-center min-h-screen p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
         <div className="shadow-md rounded-lg flex flex-col items-center justify-center">
           {isPrivate && !isAuthenticated ? (
@@ -112,7 +134,7 @@ const ImagePage = () => {
               {imageDimensions && (
                 <img 
                   src={imageUrl} 
-                  alt={id as string} 
+                  alt={name} 
                   width={imageDimensions.width} 
                   height={imageDimensions.height} 
                   className="max-w-full object-contain"
