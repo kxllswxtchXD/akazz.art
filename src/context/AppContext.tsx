@@ -2,8 +2,8 @@ import { createContext, useContext, useState, ReactNode } from "react";
 
 interface SeoData {
   title: string | null;
-  imageUrl: string | null; // Permite null
-  description: string | null; // Permite null
+  imageUrl: string | null;
+  description: string | null;
 }
 
 interface AppContextType {
@@ -23,9 +23,9 @@ export const useAppContext = () => {
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [seoData, setSeoData] = useState<SeoData>({
-    title: null,  // Título padrão
-    imageUrl: null,  // Inicializando imageUrl como null
-    description: null,  // Inicializando description como null
+    title: null,
+    imageUrl: null,
+    description: null,
   });
 
   return (

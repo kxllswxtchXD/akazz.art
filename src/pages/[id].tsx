@@ -4,8 +4,9 @@ import axios from "axios";
 import Icons from "@/components/Icons";
 import Loading from "@/components/Loading";
 import { motion } from "framer-motion";
-import { NextSeo } from "next-seo"; // Importando NextSeo
+import { NextSeo } from "next-seo";
 import { useAppContext } from "@/context/AppContext";
+import Image from "next/image"; // Import Image from next/image
 
 interface ImageResponse {
   private: boolean;
@@ -29,7 +30,7 @@ const ImagePage = () => {
   } | null>(null);
   const [showPassword, setShowPassword] = useState<boolean>(false);
 
-  const { setSeoData } = useAppContext(); // Atualizando o SEO do contexto
+  const { setSeoData } = useAppContext();
 
   useEffect(() => {
     const fetchImageDetails = async () => {
@@ -47,11 +48,10 @@ const ImagePage = () => {
         setImageUrl(`data:image/jpeg;base64,${base64}`);
         setImageDimensions({ width, height });
 
-        // Atualizando os dados de SEO no contexto
         setSeoData({
           title: `縫い付けられた唇 • ${id}`,
           imageUrl: `data:image/jpeg;base64,${base64}`,
-          description: null, // Não estamos usando descrição aqui
+          description: null,
         });
       } catch (error) {
         console.error("画像の詳細を取得中にエラーが発生しました:", error);
@@ -94,14 +94,14 @@ const ImagePage = () => {
   return (
     <>
       <NextSeo
-        title={`縫い付けられた唇 • ${id}`} // Título dinâmico
+        title={`縫い付けられた唇 • ${id}`}
         themeColor="#2b2d31"
         openGraph={{
-          url: `https://akazz.art/${id}`, // URL dinâmica com base no ID
-          title: `縫い付けられた唇 • ${id}`, // Título dinâmico
+          url: `https://akazz.art/${id}`,
+          title: `縫い付けられた唇 • ${id}`,
           images: [
             {
-              url: imageUrl, // Imagem dinâmica
+              url: imageUrl,
               alt: `Image ${id}`,
             },
           ],
@@ -157,7 +157,7 @@ const ImagePage = () => {
               transition={{ duration: 0.5 }}
             >
               {imageDimensions && (
-                <img
+                <Image
                   src={imageUrl}
                   alt={`Image ${id}`}
                   width={imageDimensions.width}
