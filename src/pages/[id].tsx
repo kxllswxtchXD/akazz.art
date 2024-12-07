@@ -5,6 +5,7 @@ import Icons from '@/components/Icons';
 import Loading from '@/components/Loading';
 import { motion } from 'framer-motion';
 import { NextSeo } from 'next-seo';
+import Image from 'next/image'; // Import Image from next/image
 
 interface ImageResponse {
   private: boolean;
@@ -12,13 +13,11 @@ interface ImageResponse {
   width: number;
   height: number;
   name: string;
-  description: string;
 }
 
 const ImagePage = () => {
   const router = useRouter();
   const { id } = router.query;
-  const [imageUrl, setImageUrl] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [password, setPassword] = useState<string>('');
@@ -27,7 +26,7 @@ const ImagePage = () => {
   const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [name, setName] = useState<string>('');
-  const [description, setDescription] = useState<string>('');
+  const [base64Image, setBase64Image] = useState<string>(''); // Use base64 image directly
 
   useEffect(() => {
     const fetchImageDetails = async () => {
@@ -39,13 +38,12 @@ const ImagePage = () => {
       try {
         console.log(`API に ID を問い合わせる: ${id}`);
         const response = await axios.get<ImageResponse>(`/api/image/${id}`);
-        const { private: isPrivateImage, base64, width, height, name, description } = response.data;
+        const { private: isPrivateImage, base64, width, height, name } = response.data;
 
         setIsPrivate(isPrivateImage);
-        setImageUrl(`data:image/jpeg;base64,${base64}`); // Set the base64 image URL
+        setBase64Image(base64); // Set base64 image directly
         setImageDimensions({ width, height });
         setName(name);
-        setDescription(description);
       } catch (error) {
         console.error('画像の詳細を取得中にエラーが発生しました:', error);
         setError('画像が見つかりません。');
@@ -64,7 +62,7 @@ const ImagePage = () => {
       const response = await axios.post<{ accessGranted: boolean }>(`/api/image/${id}`, { password });
       if (response.data.accessGranted) {
         const { data } = await axios.get<ImageResponse>(`/api/image/${id}`);
-        setImageUrl(`data:image/jpeg;base64,${data.base64}`); // Set the base64 image URL
+        setBase64Image(data.base64); // Set base64 image directly
         setIsPrivate(data.private);
         setIsAuthenticated(true);
         setImageDimensions({ width: data.width, height: data.height });
@@ -84,18 +82,11 @@ const ImagePage = () => {
   return (
     <>
       <NextSeo
-        title={name}
-        description={description}
-        canonical={`https://akazz.art/${id}`}
-        themeColor="#0e0e0e"
         openGraph={{
-          url: `https://akazz.art/${id}`,
-          title: name,
-          description: description,
           images: [
             {
-              url: imageUrl,  // Usando base64 para Open Graph
-              alt: name,  // Descrição alternativa
+              url: `data:image/jpeg;base64,${base64Image}`, // Set base64 image in the OpenGraph image URL as well
+              alt: name,
             },
           ],
         }}
@@ -132,8 +123,8 @@ const ImagePage = () => {
           ) : (
             <motion.div className="flex items-center justify-center h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
               {imageDimensions && (
-                <img 
-                  src={imageUrl} 
+                <Image 
+                  src={`data:image/jpeg;base64,${base64Image}`} // Directly use base64 string
                   alt={name} 
                   width={imageDimensions.width} 
                   height={imageDimensions.height} 
