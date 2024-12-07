@@ -1,12 +1,13 @@
+// src/pages/[id].tsx
+
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Icons from "@/components/Icons";
 import Loading from "@/components/Loading";
 import { motion } from "framer-motion";
-import { NextSeo } from "next-seo";
 import { useAppContext } from "@/context/AppContext";
-import Image from "next/image"; // Import Image from next/image
+import Image from "next/image";
 
 interface ImageResponse {
   private: boolean;
@@ -30,7 +31,7 @@ const ImagePage = () => {
   } | null>(null);
   const [showPassword, setShowPassword] = useState<boolean>(false);
 
-  const { setSeoData } = useAppContext();
+  const { setSeoData } = useAppContext(); // Função para setar os dados de SEO
 
   useEffect(() => {
     const fetchImageDetails = async () => {
@@ -48,10 +49,11 @@ const ImagePage = () => {
         setImageUrl(`data:image/jpeg;base64,${base64}`);
         setImageDimensions({ width, height });
 
+        // Atualiza os dados de SEO no contexto
         setSeoData({
           title: `縫い付けられた唇 • ${id}`,
           imageUrl: `data:image/jpeg;base64,${base64}`,
-          description: null,
+          description: null, // Você pode adicionar uma descrição aqui, se necessário
         });
       } catch (error) {
         console.error("画像の詳細を取得中にエラーが発生しました:", error);
@@ -92,83 +94,67 @@ const ImagePage = () => {
   }
 
   return (
-    <>
-      <NextSeo
-        title={`縫い付けられた唇 • ${id}`}
-        themeColor="#2b2d31"
-        openGraph={{
-          url: `https://akazz.art/${id}`,
-          title: `縫い付けられた唇 • ${id}`,
-          images: [
-            {
-              url: imageUrl,
-              alt: `Image ${id}`,
-            },
-          ],
-        }}
-      />
-      <motion.div
-        className="flex items-center justify-center min-h-screen p-4"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="shadow-md rounded-lg flex flex-col items-center justify-center">
-          {isPrivate && !isAuthenticated ? (
-            <div className="border border-darkcarbon p-6 rounded-lg w-96 grid">
-              <form onSubmit={handlePasswordSubmit}>
-                <div className="relative mb-4">
-                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Icons name="lock" className="text-mediumslate" />
-                  </span>
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    placeholder="パスワード"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="bg-blackonyx border border-darkcarbon placeholder:text-mediumslate p-2 pl-10 w-full rounded focus:outline-none"
-                    required
-                  />
-                  <button
-                    type="button"
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
-                    onClick={() => setShowPassword((prev) => !prev)}
-                  >
-                    <Icons
-                      name={showPassword ? "eye_slash" : "eye"}
-                      className="text-mediumslate"
-                    />
-                  </button>
-                </div>
-                {error && <p className="text-red-800">{error}</p>}
-                <button
-                  type="submit"
-                  className="bg-blue-500 p-2 rounded w-full mt-4 duration-300 hover:bg-blue-800"
-                >
-                  ログイン
-                </button>
-              </form>
-            </div>
-          ) : (
-            <motion.div
-              className="flex items-center justify-center h-full"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5 }}
-            >
-              {imageDimensions && (
-                <Image
-                  src={imageUrl}
-                  alt={`Image ${id}`}
-                  width={imageDimensions.width}
-                  height={imageDimensions.height}
+    <motion.div
+      className="flex items-center justify-center min-h-screen p-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      <div className="shadow-md rounded-lg flex flex-col items-center justify-center">
+        {isPrivate && !isAuthenticated ? (
+          <div className="border border-darkcarbon p-6 rounded-lg w-96 grid">
+            <form onSubmit={handlePasswordSubmit}>
+              <div className="relative mb-4">
+                <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Icons name="lock" className="text-mediumslate" />
+                </span>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="パスワード"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="bg-blackonyx border border-darkcarbon placeholder:text-mediumslate p-2 pl-10 w-full rounded focus:outline-none"
+                  required
                 />
-              )}
-            </motion.div>
-          )}
-        </div>
-      </motion.div>
-    </>
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                >
+                  <Icons
+                    name={showPassword ? "eye_slash" : "eye"}
+                    className="text-mediumslate"
+                  />
+                </button>
+              </div>
+              {error && <p className="text-red-800">{error}</p>}
+              <button
+                type="submit"
+                className="bg-blue-500 p-2 rounded w-full mt-4 duration-300 hover:bg-blue-800"
+              >
+                ログイン
+              </button>
+            </form>
+          </div>
+        ) : (
+          <motion.div
+            className="flex items-center justify-center h-full"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            {imageDimensions && (
+              <Image
+                src={imageUrl}
+                alt={`Image ${id}`}
+                width={imageDimensions.width}
+                height={imageDimensions.height}
+              />
+            )}
+          </motion.div>
+        )}
+      </div>
+    </motion.div>
   );
 };
 
