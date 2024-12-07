@@ -1,5 +1,3 @@
-// src/pages/s/[id].tsx
-
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
@@ -7,6 +5,7 @@ import Icons from '@/components/Icons';
 import Loading from '@/components/Loading';
 import { motion } from 'framer-motion';
 import Head from 'next/head';
+import { NextSeo } from 'next-seo';
 
 interface ImageResponse {
   private: boolean;
@@ -40,7 +39,7 @@ const ImagePage = () => {
         const { private: isPrivateImage, base64, width, height } = response.data;
 
         setIsPrivate(isPrivateImage);
-        setImageUrl(`data:image/jpeg;base64,${base64}`); // Set the base64 image URL
+        setImageUrl(`data:image/jpeg;base64,${base64}`);
         setImageDimensions({ width, height });
       } catch (error) {
         console.error('画像の詳細を取得中にエラーが発生しました:', error);
@@ -60,7 +59,7 @@ const ImagePage = () => {
       const response = await axios.post<{ accessGranted: boolean }>(`/api/image/${id}`, { password });
       if (response.data.accessGranted) {
         const { data } = await axios.get<ImageResponse>(`/api/image/${id}`);
-        setImageUrl(`data:image/jpeg;base64,${data.base64}`); // Set the base64 image URL
+        setImageUrl(`data:image/jpeg;base64,${data.base64}`);
         setIsPrivate(data.private);
         setIsAuthenticated(true);
         setImageDimensions({ width: data.width, height: data.height });
@@ -79,6 +78,17 @@ const ImagePage = () => {
 
   return (
     <>
+      <NextSeo
+        themeColor="#2b2d31"
+        openGraph={{
+          images: [
+            {
+              url: imageUrl,
+              alt: id ? `Image ${id}` : 'Image',
+            },
+          ],
+        }}
+      />
       <Head>
         <title>縫い付けられた唇 • {id}</title>
       </Head>
