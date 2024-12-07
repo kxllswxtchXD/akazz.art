@@ -1,9 +1,9 @@
 import "@/styles/globals.css";
 import type { AppProps } from "next/app";
-import Head from "next/head";
 import { useEffect } from "react";
 import { useRouter } from "next/router";
-import { SpeedInsights } from "@vercel/speed-insights/next"
+import { SpeedInsights } from "@vercel/speed-insights/next";
+import { NextSeo } from "next-seo"; // Importando NextSeo
 
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
@@ -14,21 +14,29 @@ export default function App({ Component, pageProps }: AppProps) {
     const isAndroid = /Android/i.test(navigator.userAgent);
 
     if (isMobile && (isIOS || isAndroid)) {
-      router.push('/unauthorized');
+      router.push("/unauthorized");
     }
   }, [router]);
 
   return (
     <>
-      <Head>
-        <title>縫い付けられた唇</title>
-        <meta property="og:site_name" content="Nuitsukera" />
-        <meta property="og:description" content="ステッチされた唇 - 新しい画像ホスティング プラットフォーム" />
-        <meta name="theme-color" content="#2b2d31" />
-        <meta property="og:url" content="https://i.akazz.art/" />
-        <link rel="icon" href="/assets/favicon.ico" />
-      </Head>
-      <SpeedInsights/>
+      <NextSeo
+        title="縫い付けられた唇"  // Definindo o título da aplicação
+        description="ステッチされた唇 - 新しい画像ホスティング プラットフォーム" // Descrição Open Graph
+        themeColor="#2b2d31" // Tema da página
+        openGraph={{
+          site_name: "Nuitsukera", // Nome do site
+          description: "ステッチされた唇 - 新しい画像ホスティング プラットフォーム",
+          url: "https://akazz.art/",
+        }}
+        additionalLinkTags={[
+          {
+            rel: "icon",
+            href: "/assets/favicon.ico", // Ícone da página
+          },
+        ]}
+      />
+      <SpeedInsights />
       <Component {...pageProps} />
     </>
   );

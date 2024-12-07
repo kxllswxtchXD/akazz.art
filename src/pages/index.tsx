@@ -1,13 +1,9 @@
 import { motion } from 'framer-motion';
-import Head from 'next/head';
 import Link from 'next/link';
 
 export default function Home() {
   return (
   <>
-  <Head>
-    <title>縫い付けられた唇</title>
-  </Head>
   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
     <div className="min-h-screen p-8">
       <pre className="text-center text-xs">

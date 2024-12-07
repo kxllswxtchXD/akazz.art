@@ -4,8 +4,7 @@ import axios from 'axios';
 import Icons from '@/components/Icons';
 import Loading from '@/components/Loading';
 import { motion } from 'framer-motion';
-import Head from 'next/head';
-import { NextSeo } from 'next-seo';
+import { NextSeo } from 'next-seo'; // Importando NextSeo
 
 interface ImageResponse {
   private: boolean;
@@ -79,19 +78,17 @@ const ImagePage = () => {
   return (
     <>
       <NextSeo
+        title={`縫い付けられた唇 • ${id}`} // Definindo o título da página aqui
         themeColor="#2b2d31"
         openGraph={{
           images: [
             {
-              url: imageUrl,
+              url: imageUrl, // Usamos a imagem carregada no formato base64
               alt: id ? `Image ${id}` : 'Image',
             },
           ],
         }}
       />
-      <Head>
-        <title>縫い付けられた唇 • {id}</title>
-      </Head>
       <motion.div className="flex items-center justify-center min-h-screen p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
         <div className="shadow-md rounded-lg flex flex-col items-center justify-center">
           {isPrivate && !isAuthenticated ? (
