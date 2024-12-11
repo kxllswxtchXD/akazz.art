@@ -5,19 +5,17 @@ import Icons from '@/components/Icons';
 import Loading from '@/components/Loading';
 import { motion } from 'framer-motion';
 import { NextSeo } from 'next-seo';
-import Image from 'next/image'; // Import Image from next/image
+import Image from 'next/image';
 
 interface ImageResponse {
   private: boolean;
   base64: string;
-  width: number;
-  height: number;
-  name: string;
 }
 
 const ImagePage = () => {
   const router = useRouter();
   const { id } = router.query;
+  const [imageUrl, setImageUrl] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [password, setPassword] = useState<string>('');
@@ -25,28 +23,36 @@ const ImagePage = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [name, setName] = useState<string>('');
-  const [base64Image, setBase64Image] = useState<string>(''); // Use base64 image directly
 
   useEffect(() => {
     const fetchImageDetails = async () => {
       if (!id || typeof id !== 'string') {
-        console.log('無効または未定義の ID');
+        console.log('無効または未定義のIDです');
         return;
       }
 
       try {
-        console.log(`API に ID を問い合わせる: ${id}`);
-        const response = await axios.get<ImageResponse>(`/api/image/${id}`);
-        const { private: isPrivateImage, base64, width, height, name } = response.data;
+        const origin = window.location.origin;
+        const imageApiUrl = `${origin}/api/image/${id}`;
+
+        console.log(`APIにIDを問い合わせ中: ${id}`);
+        const response = await axios.get<ImageResponse>(imageApiUrl);
+        const { private: isPrivateImage, base64 } = response.data;
 
         setIsPrivate(isPrivateImage);
-        setBase64Image(base64); // Set base64 image directly
-        setImageDimensions({ width, height });
-        setName(name);
+        setImageUrl(`data:image/jpeg;base64,${base64}`);
+
+        const img = new window.Image();
+        img.src = `data:image/jpeg;base64,${base64}`;
+        img.onload = () => {
+          setImageDimensions({
+            width: img.width,
+            height: img.height,
+          });
+        };
       } catch (error) {
         console.error('画像の詳細を取得中にエラーが発生しました:', error);
-        setError('画像が見つかりません。');
+        setError('画像が見つかりませんでした。');
       } finally {
         setLoading(false);
       }
@@ -58,16 +64,27 @@ const ImagePage = () => {
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const origin = window.location.origin;
+      const imageApiUrl = `${origin}/api/image/${id}`;
+
       console.log(`IDのパスワードを確認中: ${id}`);
-      const response = await axios.post<{ accessGranted: boolean }>(`/api/image/${id}`, { password });
+      const response = await axios.post<{ accessGranted: boolean }>(imageApiUrl, { password });
       if (response.data.accessGranted) {
-        const { data } = await axios.get<ImageResponse>(`/api/image/${id}`);
-        setBase64Image(data.base64); // Set base64 image directly
+        const { data } = await axios.get<ImageResponse>(imageApiUrl);
+        setImageUrl(`data:image/jpeg;base64,${data.base64}`);
         setIsPrivate(data.private);
         setIsAuthenticated(true);
-        setImageDimensions({ width: data.width, height: data.height });
+
+        const img = new window.Image();
+        img.src = `data:image/jpeg;base64,${data.base64}`;
+        img.onload = () => {
+          setImageDimensions({
+            width: img.width,
+            height: img.height,
+          });
+        };
       } else {
-        setError('パスワードが間違っています!');
+        setError('パスワードが間違っています！');
       }
     } catch (err) {
       console.error('パスワードチェック中にエラーが発生しました:', err);
@@ -81,16 +98,25 @@ const ImagePage = () => {
 
   return (
     <>
-      <NextSeo
-        openGraph={{
-          images: [
-            {
-              url: `data:image/jpeg;base64,${base64Image}`, // Set base64 image in the OpenGraph image URL as well
-              alt: name,
-            },
-          ],
-        }}
-      />
+    <NextSeo
+      title={`画像の表示 • ${id}`}
+      description="表示された画像"
+      openGraph={{
+        type: 'website',
+        url: `${window.location.origin}/${id}`,
+        title: `画像の表示 • ${id}`,
+        description: "表示された画像",
+        images: [
+          {
+            url: imageUrl,
+            width: imageDimensions?.width,
+            height: imageDimensions?.height,
+            alt: id as string,
+          },
+        ],
+      }}
+    />
+
       <motion.div className="flex items-center justify-center min-h-screen p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
         <div className="shadow-md rounded-lg flex flex-col items-center justify-center">
           {isPrivate && !isAuthenticated ? (
@@ -124,11 +150,12 @@ const ImagePage = () => {
             <motion.div className="flex items-center justify-center h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
               {imageDimensions && (
                 <Image 
-                  src={`data:image/jpeg;base64,${base64Image}`} // Directly use base64 string
-                  alt={name} 
-                  width={imageDimensions.width} 
-                  height={imageDimensions.height} 
+                  src={imageUrl}
+                  alt={id as string} 
+                  width={imageDimensions.width}
+                  height={imageDimensions.height}
                   className="max-w-full object-contain"
+                  unoptimized
                 />
               )}
             </motion.div>

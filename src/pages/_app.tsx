@@ -3,8 +3,7 @@ import type { AppProps } from "next/app";
 import Head from "next/head";
 import { useEffect } from "react";
 import { useRouter } from "next/router";
-import { SpeedInsights } from "@vercel/speed-insights/next";
-import { NextSeo } from "next-seo";
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
@@ -21,23 +20,15 @@ export default function App({ Component, pageProps }: AppProps) {
 
   return (
     <>
-      <NextSeo
-        title="縫い付けられた唇"
-        description="ステッチされた唇 - 新しい画像ホスティング プラットフォーム"
-        canonical="https://akazz.art/"
-        themeColor="#0e0e0e"
-        openGraph={{
-          url: "https://akazz.art/",
-          title: "縫い付けられた唇",
-          description: "ステッチされた唇 - 新しい画像ホスティング プラットフォーム",
-        }}
-      />
       <Head>
+        <title>縫い付けられた唇</title>
         <meta property="og:site_name" content="Nuitsukera" />
+        <meta property="og:description" content="ステッチされた唇 - 新しい画像ホスティング プラットフォーム" />
         <meta name="theme-color" content="#0e0e0e" />
+        <meta property="og:url" content="https://i.akazz.art/" />
         <link rel="icon" href="/assets/favicon.ico" />
       </Head>
-      <SpeedInsights />
+      <SpeedInsights/>
       <Component {...pageProps} />
     </>
   );
