@@ -1,9 +1,9 @@
 import "@/styles/globals.css";
 import type { AppProps } from "next/app";
-import Head from "next/head";
 import { useEffect } from "react";
 import { useRouter } from "next/router";
-import { SpeedInsights } from "@vercel/speed-insights/next"
+import { SpeedInsights } from "@vercel/speed-insights/next";
+import { DefaultSeo } from "next-seo";
 
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
@@ -20,15 +20,26 @@ export default function App({ Component, pageProps }: AppProps) {
 
   return (
     <>
-      <Head>
-        <title>縫い付けられた唇</title>
-        <meta property="og:site_name" content="Nuitsukera" />
-        <meta property="og:description" content="ステッチされた唇 - 新しい画像ホスティング プラットフォーム" />
-        <meta name="theme-color" content="#0e0e0e" />
-        <meta property="og:url" content="https://i.akazz.art/" />
-        <link rel="icon" href="/assets/favicon.ico" />
-      </Head>
-      <SpeedInsights/>
+      <DefaultSeo
+        title="Akazz — Host"
+        description="Akazz — Host • Nova plataforma de hospedagem de mídia"
+        openGraph={{
+          site_name: "Akazz — Host",
+          description: "Akazz — Host • Nova plataforma de hospedagem de mídia",
+          url: "https://akazz.art/",
+          images: [
+            {
+              url: "/assets/favicon.ico",
+              alt: "Akazz logo",
+            },
+          ],
+        }}
+        twitter={{
+          cardType: 'summary_large_image',
+        }}
+        themeColor="#0e0e0e"
+      />
+      <SpeedInsights />
       <Component {...pageProps} />
     </>
   );

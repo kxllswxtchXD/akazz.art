@@ -12,7 +12,7 @@ export default function Home() {
       >
         <div className="border border-darkcarbon shadow-md rounded-lg p-8 w-full max-w-lg">
           <h1 className="text-3xl font-bold text-center text-mediumslate mb-6 font-varela">
-            画像の送信
+          Akazz — Host
           </h1>
           <motion.div
             key="uploadForm"
