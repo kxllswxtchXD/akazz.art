@@ -34,12 +34,12 @@ const FilePage = () => {
     const fetchFileData = async () => {
       try {
         const response = await fetch(`/api/verification/${id}`);
-        if (!response.ok) throw new Error('Arquivo não encontrado');
+        if (!response.ok) throw new Error();
 
         const data = await response.json();
         setFileData(data);
       } catch (err) {
-        setError('Erro ao carregar o arquivo');
+        setError('Erro ao carregar os dados do arquivo.');
         console.error(err);
       } finally {
         setLoading(false);
@@ -60,15 +60,18 @@ const FilePage = () => {
       });
 
       if (response.ok) {
+        const data = await response.json();
         setIsPasswordCorrect(true);
-        setError(null); // Limpa os erros
+        setError(null);
+
+        setFileData((prev) => (prev ? { ...prev, private: false } : prev));
       } else {
         const data = await response.json();
         setIsPasswordCorrect(false);
-        setError(data.error || 'Erro desconhecido');
+        setError(data.error || 'Erro na autenticação.');
       }
     } catch (err) {
-      setError('Erro ao verificar a senha');
+      setError('Erro ao verificar a senha.');
       console.error(err);
     }
   };
@@ -76,9 +79,8 @@ const FilePage = () => {
   if (loading) return <Loading />;
   if (error && !fileData) return <div className="text-red-800 text-center">{error}</div>;
 
-  // Garantir que `fileData` não seja `null` antes de usá-lo
   if (!fileData) {
-    return <div className="text-red-800 text-center">Arquivo não encontrado</div>;
+    return <div className="text-red-800 text-center">Arquivo não encontrado.</div>;
   }
 
   const { format, path, original_name, width, height, private: isPrivate } = fileData;
@@ -88,15 +90,13 @@ const FilePage = () => {
     ? 'video'
     : 'unknown';
 
-  // Configuração do SEO dinâmico com base nas informações do arquivo
-  const seoTitle = fileData.id; // ID do arquivo
-  const seoDescription = fileData.original_name; // Nome original do arquivo
-  const seoImageUrl = fileType === 'image' && !isPrivate ? fileData.path : ''; // Caminho da imagem, se for uma imagem pública
-  const seoImageAlt = fileType === 'image' && !isPrivate ? fileData.original_name : ''; // Texto alternativo da imagem
-  const seoImageWidth = fileType === 'image' && !isPrivate ? fileData.width : 0; // Largura da imagem, se for pública
-  const seoImageHeight = fileType === 'image' && !isPrivate ? fileData.height : 0; // Altura da imagem, se for pública
+  const seoTitle = fileData.original_name;
+  const seoDescription = fileData.original_name;
+  const seoImageUrl = fileType === 'image' && !isPrivate ? fileData.path : '';
+  const seoImageAlt = fileType === 'image' && !isPrivate ? fileData.original_name : '';
+  const seoImageWidth = fileType === 'image' && !isPrivate ? fileData.width : 0;
+  const seoImageHeight = fileType === 'image' && !isPrivate ? fileData.height : 0;
 
-  // Renderiza o formulário de senha se o arquivo for privado e a senha ainda não foi verificada
   if (isPrivate && isPasswordCorrect === null) {
     return (
       <motion.div
@@ -114,7 +114,7 @@ const FilePage = () => {
                 </span>
                 <input
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Digite a senha"
+                  placeholder="Insira a senha"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="bg-blackonyx border border-darkcarbon placeholder:text-mediumslate p-2 pl-10 w-full rounded focus:outline-none"
@@ -148,10 +148,14 @@ const FilePage = () => {
         <NextSeo
           title={seoTitle}
           description={seoDescription}
-          canonical={`https://akazz.art${router.asPath.split("?")[0] === "/" ? "" : router.asPath.split("?")[0]}`}
-          themeColor="#0e0e0e"
+          canonical={`https://akazz.art${
+            router.asPath.split('?')[0] === '/' ? '' : router.asPath.split('?')[0]
+          }`}
+          themeColor="#2b2d31"
           openGraph={{
-            url: `https://akazz.art${router.asPath.split("?")[0] === "/" ? "" : router.asPath.split("?")[0]}`,
+            url: `https://akazz.art${
+              router.asPath.split('?')[0] === '/' ? '' : router.asPath.split('?')[0]
+            }`,
             title: seoTitle,
             description: seoDescription,
             images: seoImageUrl
@@ -163,7 +167,7 @@ const FilePage = () => {
                     height: seoImageHeight,
                   },
                 ]
-              : [], // Não inclui imagem se for um vídeo ou imagem privada
+              : [],
           }}
         />
         <motion.div
@@ -173,7 +177,7 @@ const FilePage = () => {
           transition={{ duration: 0.5 }}
         >
           <div className="shadow-md rounded-lg flex flex-col items-center justify-center">
-            {fileType === 'image' && !isPrivate && (
+            {fileType === 'image' && (
               <Image
                 src={path}
                 alt={original_name}
@@ -185,17 +189,16 @@ const FilePage = () => {
             {fileType === 'video' && (
               <video controls style={{ maxWidth: '100%', height: 'auto' }}>
                 <source src={path} type={`video/${format}`} />
-                Seu navegador não suporta este formato de vídeo.
               </video>
             )}
-            {fileType === 'unknown' && <div>Formato de arquivo não suportado.</div>}
+            {fileType === 'unknown' && <div>Formato desconhecido</div>}
           </div>
         </motion.div>
       </>
     );
   }
 
-  return <div className="text-red-800 text-center">Erro ao exibir o arquivo.</div>;
+  return <div className="text-red-800 text-center">Erro ao carregar o arquivo.</div>;
 };
 
 export default FilePage;

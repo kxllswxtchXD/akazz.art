@@ -6,7 +6,7 @@ import bcrypt from 'bcryptjs';
 import path from 'path';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
-import sharp from 'sharp'; // Importa sharp para manipulação de imagens
+import sharp from 'sharp';
 
 const nanoid = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', 8);
 
@@ -21,7 +21,7 @@ export const config = {
 const parseForm = (req: NextApiRequest): Promise<{ fields: Fields; files: Files }> => {
   const form = new IncomingForm({
     multiples: false,
-    maxFileSize: 100 * 1024 * 1024, // Limitar tamanho máximo para 100MB
+    maxFileSize: 100 * 1024 * 1024,
     keepExtensions: true,
   });
 
@@ -33,23 +33,22 @@ const parseForm = (req: NextApiRequest): Promise<{ fields: Fields; files: Files 
   });
 };
 
-// Função para obter as dimensões da imagem
 const getImageDimensions = async (filePath: string) => {
   const image = await sharp(filePath).metadata();
-  return { width: image.width ?? 0, height: image.height ?? 0 }; // Garantir que valores sejam números
+  return { width: image.width ?? 0, height: image.height ?? 0 };
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: '許可されていないメソッドです' });
+    return res.status(405).json({ error: 'Método não permitido.' });
   }
 
   try {
     const { fields, files } = await parseForm(req);
 
-    const fileArray = files.file as File[] | File | undefined;
+    const fileArray = files.file as File | File[] | undefined;
     if (!fileArray) {
-      return res.status(400).json({ error: 'ファイルが送信されていません。' });
+      return res.status(400).json({ error: 'Nenhum arquivo foi enviado.' });
     }
 
     const file = Array.isArray(fileArray) ? fileArray[0] : fileArray;
@@ -67,7 +66,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const fileExtension = file.originalFilename ? path.extname(file.originalFilename).toLowerCase() : '';
 
     if (!validExtensions.includes(fileExtension)) {
-      return res.status(400).json({ error: 'ファイル形式はサポートされていません。画像や動画を送信してください。' });
+      return res.status(400).json({ error: 'Formato de arquivo não suportado. Envie uma imagem ou vídeo.' });
     }
 
     const filenameWithoutExt = nanoid();
@@ -93,27 +92,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       try {
         hashedPassword = await bcrypt.hash(password, 10);
       } catch (err) {
-        console.error('パスワードのハッシュ化中にエラーが発生しました:', err);
-        return res.status(500).json({ error: 'パスワードの処理中にエラーが発生しました。' });
+        console.error('Erro ao hashizar a senha:', err);
+        return res.status(500).json({ error: 'Erro ao processar a senha.' });
       }
     }
 
-    const protocol = req.headers['x-forwarded-proto'] || 'http'; // For servers with a reverse proxy
-    const host = req.headers.host; // Gets the host (domain) of the request
-    const fileURL = `${protocol}://${host}/${filenameWithoutExt}`; // Accessing directly from the root
+    const protocol = req.headers['x-forwarded-proto'] || 'http';
+    const host = req.headers.host;
+    const fileURL = `${protocol}://${host}/${filenameWithoutExt}`;
 
-    // Perform the database insertion
     const result = await query(
       `INSERT INTO files (id, original_name, format, password, created_at, private, width, height) 
       VALUES ($1, $2, $3, $4, NOW(), $5, $6, $7) RETURNING id`,
       [
-        filenameWithoutExt,    // ID do arquivo
-        file.originalFilename, // Nome original do arquivo
-        fileExtension.slice(1), // Formato do arquivo (sem o ponto)
-        hashedPassword,        // Senha criptografada (se privado)
-        isPrivate,             // Flag de privacidade
-        width,                 // Largura da imagem
-        height                 // Altura da imagem
+        filenameWithoutExt,
+        file.originalFilename,
+        fileExtension.slice(1),
+        hashedPassword,
+        isPrivate,
+        width,
+        height
       ]
     );
 
@@ -121,12 +119,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(200).json({ link: fileURL, id: fileId });
   } catch (error) {
-    console.error('アップロードエラー:', error);
+    console.error('Erro durante o upload:', error);
 
     if (error instanceof Error && error.hasOwnProperty('code') && (error as any).code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({ error: 'ファイルが大きすぎます。最大100MBのファイルをアップロードしてください。' });
+      return res.status(400).json({ error: 'O arquivo é muito grande. Envie arquivos de até 100MB.' });
     }
 
-    return res.status(500).json({ error: 'アップロード処理中にエラーが発生しました。' });
+    return res.status(500).json({ error: 'Erro ao processar o upload.' });
   }
 }
