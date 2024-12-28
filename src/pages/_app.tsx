@@ -2,8 +2,8 @@ import "@/styles/globals.css";
 import type { AppProps } from "next/app";
 import { useEffect } from "react";
 import { useRouter } from "next/router";
-import { SpeedInsights } from "@vercel/speed-insights/next";
-import { DefaultSeo } from "next-seo";
+import { NextSeo } from "next-seo";
+import Head from "next/head";
 
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
@@ -14,32 +14,30 @@ export default function App({ Component, pageProps }: AppProps) {
     const isAndroid = /Android/i.test(navigator.userAgent);
 
     if (isMobile && (isIOS || isAndroid)) {
-      router.push('/unauthorized');
+      router.push("/unauthorized");
     }
   }, [router]);
 
   return (
     <>
-      <DefaultSeo
+      <Head>
+        <link rel="icon" href="/assets/favicon.ico" />
+      </Head>
+      <NextSeo
         title="Akazz — Host"
-        description="Akazz — Host • Nova plataforma de hospedagem de mídia"
-        openGraph={{
-          site_name: "Akazz — Host",
-          description: "Akazz — Host • Nova plataforma de hospedagem de mídia",
-          url: "https://akazz.art/",
-          images: [
-            {
-              url: "/assets/favicon.ico",
-              alt: "Akazz logo",
-            },
-          ],
-        }}
-        twitter={{
-          cardType: 'summary_large_image',
-        }}
+        description="Nova plataforma de hospedagem de mídia."
+        canonical={`https://akazz.art${
+          router.asPath.split("?")[0] === "/" ? "" : router.asPath.split("?")[0]
+        }`}
         themeColor="#0e0e0e"
+        openGraph={{
+          url: `https://akazz.art${
+            router.asPath.split("?")[0] === "/" ? "" : router.asPath.split("?")[0]
+          }`,
+          title: "Akazz — Host",
+          description: "Nova plataforma de hospedagem de mídia.",
+        }}
       />
-      <SpeedInsights />
       <Component {...pageProps} />
     </>
   );

@@ -5,6 +5,8 @@ import { NextSeo } from 'next-seo';
 import Image from 'next/image';
 import Loading from '@/components/Loading';
 import Icons from '@/components/Icons';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css'; // Importa os estilos do Toastify
 
 interface FileData {
   id: string;
@@ -40,6 +42,7 @@ const FilePage = () => {
         setFileData(data);
       } catch (err) {
         setError('Erro ao carregar os dados do arquivo.');
+        toast.error('Erro ao carregar os dados do arquivo.');
         console.error(err);
       } finally {
         setLoading(false);
@@ -63,15 +66,18 @@ const FilePage = () => {
         const data = await response.json();
         setIsPasswordCorrect(true);
         setError(null);
+        toast.success('Senha verificada com sucesso!');
 
         setFileData((prev) => (prev ? { ...prev, private: false } : prev));
       } else {
         const data = await response.json();
         setIsPasswordCorrect(false);
         setError(data.error || 'Erro na autenticação.');
+        toast.error(data.error || 'Erro na autenticação.');
       }
     } catch (err) {
       setError('Erro ao verificar a senha.');
+      toast.error('Erro ao verificar a senha.');
       console.error(err);
     }
   };
@@ -90,12 +96,12 @@ const FilePage = () => {
     ? 'video'
     : 'unknown';
 
-  const seoTitle = fileData.original_name;
-  const seoDescription = fileData.original_name;
-  const seoImageUrl = fileType === 'image' && !isPrivate ? fileData.path : '';
-  const seoImageAlt = fileType === 'image' && !isPrivate ? fileData.original_name : '';
-  const seoImageWidth = fileType === 'image' && !isPrivate ? fileData.width : 0;
-  const seoImageHeight = fileType === 'image' && !isPrivate ? fileData.height : 0;
+  const seoTitle = original_name;
+  const seoDescription = `Confira o arquivo ${original_name} hospedado no Akazz Host.`;
+  const seoImageUrl = fileType === 'image' && !isPrivate ? path : '';
+  const seoImageAlt = fileType === 'image' && !isPrivate ? original_name : '';
+  const seoImageWidth = fileType === 'image' && !isPrivate ? width : 0;
+  const seoImageHeight = fileType === 'image' && !isPrivate ? height : 0;
 
   if (isPrivate && isPasswordCorrect === null) {
     return (
@@ -142,63 +148,57 @@ const FilePage = () => {
     );
   }
 
-  if (!isPrivate || isPasswordCorrect) {
-    return (
-      <>
-        <NextSeo
-          title={seoTitle}
-          description={seoDescription}
-          canonical={`https://akazz.art${
-            router.asPath.split('?')[0] === '/' ? '' : router.asPath.split('?')[0]
-          }`}
-          themeColor="#2b2d31"
-          openGraph={{
-            url: `https://akazz.art${
-              router.asPath.split('?')[0] === '/' ? '' : router.asPath.split('?')[0]
-            }`,
-            title: seoTitle,
-            description: seoDescription,
-            images: seoImageUrl
-              ? [
-                  {
-                    url: seoImageUrl,
-                    alt: seoImageAlt,
-                    width: seoImageWidth,
-                    height: seoImageHeight,
-                  },
-                ]
-              : [],
-          }}
-        />
-        <motion.div
-          className="flex items-center justify-center min-h-screen p-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="shadow-md rounded-lg flex flex-col items-center justify-center">
-            {fileType === 'image' && (
-              <Image
-                src={path}
-                alt={original_name}
-                width={width}
-                height={height}
-                style={{ maxWidth: '100%', height: 'auto' }}
-              />
-            )}
-            {fileType === 'video' && (
-              <video controls style={{ maxWidth: '100%', height: 'auto' }}>
-                <source src={path} type={`video/${format}`} />
-              </video>
-            )}
-            {fileType === 'unknown' && <div>Formato desconhecido</div>}
-          </div>
-        </motion.div>
-      </>
-    );
-  }
+  return (
+    <>
+      <NextSeo
+        title={seoTitle}
+        description={seoDescription}
+        canonical={`https://akazz.art${router.asPath}`}
+        themeColor="#2b2d31"
+        openGraph={{
+          url: `https://akazz.art${router.asPath}`,
+          title: seoTitle,
+          description: seoDescription,
+          images: seoImageUrl
+            ? [
+                {
+                  url: seoImageUrl,
+                  alt: seoImageAlt,
+                  width: seoImageWidth,
+                  height: seoImageHeight,
+                },
+              ]
+            : [],
+        }}
+      />
+      <motion.div
+        className="flex items-center justify-center min-h-screen p-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="shadow-md rounded-lg flex flex-col items-center justify-center">
+          {fileType === 'image' && (
+            <Image
+              src={path}
+              alt={original_name}
+              width={width}
+              height={height}
+              style={{ maxWidth: '100%', height: 'auto' }}
+            />
+          )}
+          {fileType === 'video' && (
+            <video controls style={{ maxWidth: '100%', height: 'auto' }}>
+              <source src={path} type={`video/${format}`} />
+            </video>
+          )}
+          {fileType === 'unknown' && <div>Formato desconhecido</div>}
+        </div>
+      </motion.div>
 
-  return <div className="text-red-800 text-center">Erro ao carregar o arquivo.</div>;
+      <ToastContainer position="bottom-right" autoClose={3000} limit={4} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="dark" />
+    </>
+  );
 };
 
 export default FilePage;

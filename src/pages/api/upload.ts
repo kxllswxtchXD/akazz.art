@@ -21,7 +21,7 @@ export const config = {
 const parseForm = (req: NextApiRequest): Promise<{ fields: Fields; files: Files }> => {
   const form = new IncomingForm({
     multiples: false,
-    maxFileSize: 100 * 1024 * 1024,
+    maxFileSize: 10 * 1024 * 1024 * 1024,
     keepExtensions: true,
   });
 
@@ -122,7 +122,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.error('Erro durante o upload:', error);
 
     if (error instanceof Error && error.hasOwnProperty('code') && (error as any).code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({ error: 'O arquivo é muito grande. Envie arquivos de até 100MB.' });
+      return res.status(400).json({ error: 'O arquivo é muito grande. Envie arquivos de até 10GB.' });
     }
 
     return res.status(500).json({ error: 'Erro ao processar o upload.' });
