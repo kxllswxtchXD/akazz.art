@@ -54,7 +54,7 @@ const ImagePage = () => {
     } finally {
       setLoading(false);
     }
-  }, [id]);  
+  }, [id]);
 
   useEffect(() => {
     fetchImageData();
