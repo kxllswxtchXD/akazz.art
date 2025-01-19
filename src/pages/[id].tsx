@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { NextSeo } from 'next-seo';
 import Loading from '@/components/Loading';
 import Icons from '@/components/Icons';
+import Image from 'next/image';
 
 interface ImageData {
   type: string;
@@ -28,32 +29,36 @@ const ImagePage = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const fetchImageData = async () => {
+  const fetchImageData = useCallback(async () => {
     if (!id) return;
     setLoading(true);
     try {
       const response = await fetch(`/api/verification/${id}`);
-      const result = await response.json();
+      const data = await response.json();
       if (response.ok) {
-        setImageData(result);
-        setFileType(result.type);
-        setContent(result.content);
-        setOriginalName(result.original_name);
+        setImageData(data);
+        setFileType(data.type);
+        setContent(data.content);
+        setOriginalName(data.original_name);
         const imgElement = new window.Image();
-        imgElement.src = `data:image/jpeg;base64,${result.content}`;
+        imgElement.src = `data:image/jpeg;base64,${data.content}`;
         imgElement.onload = () => {
           setWidth(imgElement.width);
           setHeight(imgElement.height);
         };
       } else {
-        console.error(result.error || 'Erro ao buscar dados da imagem.');
+        console.error(data.error || 'Erro ao buscar dados da imagem.');
       }
     } catch (error) {
       console.error('Erro ao buscar dados:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    fetchImageData();
+  }, [id, fetchImageData]);
 
   const handlePasswordSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -65,7 +70,7 @@ const ImagePage = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password }),
       });
-      const result = await response.json();
+      const data = await response.json();
       if (response.ok) {
         setIsPasswordCorrect(true);
       } else {
@@ -78,22 +83,11 @@ const ImagePage = () => {
     }
   };
 
-  useEffect(() => {
-    fetchImageData();
-  }, [id]);
-
   if (loading) return <Loading />;
 
   return (
     <>
-      <NextSeo
-        title={originalName}
-        openGraph={{
-          title: originalName,
-          url: `https://akazz.art/${id}`,
-          site_name: `${originalName}`,
-        }}
-      />
+      <NextSeo title={originalName} openGraph={{ title: originalName, url: `https://akazz.art/${id}`, site_name: `${originalName}` }} />
       <motion.div className="flex items-center justify-center min-h-screen p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
         <div className="shadow-md rounded-lg p-8 w-full max-w-lg">
           {isPasswordCorrect === null && imageData?.private && (
@@ -127,14 +121,12 @@ const ImagePage = () => {
           {isPasswordCorrect === false && imageData?.private && <div className="text-red-500">Senha incorreta. Tente novamente.</div>}
           {isPasswordCorrect === true && imageData?.private && (
             <div className="flex flex-col items-center justify-center">
-              {fileType === 'image' && content && (
-                <img src={`data:image/jpeg;base64,${content}`} alt={originalName} width={width} height={height} style={{ maxWidth: '100%', height: 'auto' }} />
-              )}
+              {fileType === 'image' && content && <Image src={`data:image/jpeg;base64,${content}`} alt={originalName} width={width} height={height} style={{ maxWidth: '100%', height: 'auto' }} />}
             </div>
           )}
           {isPasswordCorrect === null && !imageData?.private && fileType === 'image' && (
             <div className="flex flex-col items-center justify-center">
-              {content && <img src={`data:image/jpeg;base64,${content}`} alt={originalName} width={width} height={height} style={{ maxWidth: '100%', height: 'auto' }} />}
+              {content && <Image src={`data:image/jpeg;base64,${content}`} alt={originalName} width={width} height={height} style={{ maxWidth: '100%', height: 'auto' }} />}
             </div>
           )}
         </div>
