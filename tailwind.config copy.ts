@@ -1,6 +1,6 @@
 import type { Config } from "tailwindcss";
 
-const config: Config = {
+export default {
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -29,22 +29,7 @@ const config: Config = {
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
       },
-      borderWidth: {
-        1: '1px',
-      },
-      keyframes: {
-        wave: {
-          '0%': { transform: 'rotate(0deg)' },
-          '25%': { transform: 'rotate(-20deg)' },
-          '75%': { transform: 'rotate(20deg)' },
-          '100%': { transform: 'rotate(0deg)' },
-        },
-      },
-      animation: {
-        'wave': 'wave 0.8s linear',
-      },
     },
   },
-};
-
-export default config;
+  plugins: [],
+} satisfies Config;

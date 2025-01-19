@@ -1,7 +1,5 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 import Icons from '@/components/Icons';
 
 const UploadForm = () => {
@@ -14,13 +12,7 @@ const UploadForm = () => {
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
-      const selectedFile = event.target.files[0];
-      if (selectedFile.size > 10 * 1024 * 1024 * 1024) {
-        toast.error('O arquivo é muito grande. Faça upload de arquivos de até 10GB.');
-        setFile(null);
-      } else {
-        setFile(selectedFile);
-      }
+      setFile(event.target.files[0]);
     }
   };
 
@@ -28,127 +20,95 @@ const UploadForm = () => {
     event.preventDefault();
     if (!file) return;
 
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('private', String(isPrivate));
-    if (isPrivate) {
-      formData.append('password', password);
-    }
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64File = reader.result as string;
+      const formData = {
+        file: base64File.split(',')[1],
+        originalName: file.name,
+        private: isPrivate,
+        password: isPrivate ? password : undefined,
+      };
 
-    try {
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await response.json();
-      if (response.ok) {
-        setUploadLink(data.link);
-        setFile(null);
-        setPassword('');
-        setIsPrivate(false);
-        toast.success('Upload concluído com sucesso!');
-      } else {
-        toast.error(data.error || 'Erro desconhecido.');
+      try {
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+          setUploadLink(data.link);
+          setFile(null);
+          setPassword('');
+          setIsPrivate(false);
+        } else {
+          console.error(data.error || 'Erro desconhecido.');
+        }
+      } catch (error) {
+        console.error('Erro ao enviar:', error);
       }
-    } catch (error) {
-      console.error('Erro ao enviar:', error);
-      toast.error('Ocorreu um erro durante o upload. Por favor, tente novamente.');
-    }
+    };
+    reader.readAsDataURL(file);
   };
 
   return (
     <div>
-      <ToastContainer position="bottom-right" autoClose={3000} limit={4} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="dark" />
       <form onSubmit={handleUpload} className="space-y-4">
         <div>
-          <label className="block text-mediumslate font-medium mb-2">Selecionar imagem ou vídeo:</label>
+          <label className="block text-muted-foreground font-medium mb-2">Selecionar imagem:</label>
           <div className="relative">
-            <input
-              ref={fileInputRef}
-              type="file"
-              onChange={handleFileChange}
-              accept="image/*,video/*"
-              className="hidden"
-            />
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="w-full border border-darkcarbon rounded-md p-4 text-center text-mediumslate duration-300 hover:text-mediumslate hover:border-mediumslate"
-            >
+            <input ref={fileInputRef} type="file" onChange={handleFileChange} accept="image/*" className="hidden" />
+            <button type="button" onClick={() => fileInputRef.current?.click()} className="w-full border border-border rounded-md p-4 text-center text-muted-foreground duration-300 hover:text-primary-800 hover:border-primary-800 truncate">
               {file ? file.name : 'Enviar arquivo'}
             </button>
           </div>
         </div>
 
         <div className="flex items-center">
-          <input
-            type="checkbox"
-            id="private"
-            checked={isPrivate}
-            onChange={() => setIsPrivate(!isPrivate)}
-            className="w-4 h-4 text-mediumslate border-gray-300 rounded"
-          />
-          <label htmlFor="private" className="ml-2 text-mediumslate">
-            Privado
-          </label>
+          <input type="checkbox" id="private" checked={isPrivate} onChange={() => setIsPrivate(!isPrivate)} className="w-4 h-4" />
+          <label htmlFor="private" className="ml-2 text-muted-foreground">Privado</label>
         </div>
 
         <AnimatePresence>
           {isPrivate && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-            >
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.3 }}>
               <div className="relative mb-4">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Icons name="lock" className="text-mediumslate" />
-                </span>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="senha"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="bg-blackonyx border border-darkcarbon placeholder:text-mediumslate p-2 pl-10 w-full rounded focus:outline-none"
-                  required
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
-                  onClick={() => setShowPassword((prev) => !prev)}
-                >
-                  <Icons name={showPassword ? 'eye_slash' : 'eye'} className="text-mediumslate" />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center">
+                  <Icons name="lock" size="w-6 h-6" className="text-muted-foreground"/>
+                </div>
+                <input type={showPassword ? 'text' : 'password'} placeholder="Senha" value={password} onChange={(e) => setPassword(e.target.value)} className="bg-transparent border border-border text-muted-foreground placeholder:border-primary-800 p-2 pl-10 w-full rounded focus:outline-none" required />
+                <button type="button" className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer" onClick={() => setShowPassword((prev) => !prev)}>
+                  <AnimatePresence>
+                    {showPassword ? (
+                      <motion.div key="eye-slash" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.5 }} className="absolute inset-y-0 right-0 flex items-center justify-center">
+                        <Icons name="eye_slash" size="w-6 h-6" className="mr-2 text-muted-foreground" />
+                      </motion.div>
+                    ) : (
+                      <motion.div key="eye" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.5 }} className="absolute inset-y-0 right-0 flex items-center justify-center">
+                        <Icons name="eye" size="w-6 h-6" className="mr-2 text-muted-foreground" />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </button>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        <button
-          type="submit"
-          className="bg-blue-500 p-2 rounded w-full mt-4 duration-300 hover:bg-blue-800"
-        >
-          Enviar
-        </button>
+        <button type="submit" className="bg-primary-750 p-2 rounded w-full mt-4 duration-300 hover:bg-primary-800">Enviar</button>
 
         <AnimatePresence>
           {uploadLink && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-              className="mt-6"
-            >
-              <label className="block text-mediumslate font-medium mb-2">URL de acesso:</label>
-              <input
-                type="text"
-                value={uploadLink}
-                readOnly
-                className="block bg-blackonyx border border-darkcarbon placeholder:text-mediumslate p-2 pl-5 w-full rounded outline-none focus:border-mediumslate focus:outline-none duration-300 hover:border-mediumslate"
-                onClick={(e) => (e.target as HTMLInputElement).select()}
-              />
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.3 }} className="mt-6">
+              <label className="block text-muted-foreground font-medium mb-2">URL de acesso:</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center">
+                  <Icons name="link" size="w-6 h-6" className="text-muted-foreground" />
+                </div>
+                <input type="text" value={uploadLink} readOnly className="block bg-transparent text-muted-foreground font-light border border-border p-2 pl-10 w-full rounded focus:border-border focus:outline-none" onClick={(e) => (e.target as HTMLInputElement).select()} />
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

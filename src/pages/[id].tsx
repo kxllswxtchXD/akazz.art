@@ -1,204 +1,136 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { NextSeo } from 'next-seo';
-import Image from 'next/image';
 import Loading from '@/components/Loading';
 import Icons from '@/components/Icons';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css'; // Importa os estilos do Toastify
 
-interface FileData {
-  id: string;
-  original_name: string;
-  format: string;
-  path: string;
-  created_at: string;
-  private: boolean;
-  width: number;
-  height: number;
-}
-
-const FilePage = () => {
-  const [fileData, setFileData] = useState<FileData | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [password, setPassword] = useState<string>('');
-  const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [isPasswordCorrect, setIsPasswordCorrect] = useState<boolean | null>(null);
-
+const ImagePage = () => {
   const router = useRouter();
   const { id } = router.query;
 
-  useEffect(() => {
+  const [imageData, setImageData] = useState<any>(null);
+  const [password, setPassword] = useState('');
+  const [isPasswordCorrect, setIsPasswordCorrect] = useState<boolean | null>(null);
+  const [fileType, setFileType] = useState('');
+  const [content, setContent] = useState<string>('');
+  const [originalName, setOriginalName] = useState('');
+  const [width, setWidth] = useState<number>(0);
+  const [height, setHeight] = useState<number>(0);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const fetchImageData = async () => {
     if (!id) return;
-
-    const fetchFileData = async () => {
-      try {
-        const response = await fetch(`/api/verification/${id}`);
-        if (!response.ok) throw new Error();
-
-        const data = await response.json();
-        setFileData(data);
-      } catch (err) {
-        setError('Erro ao carregar os dados do arquivo.');
-        toast.error('Erro ao carregar os dados do arquivo.');
-        console.error(err);
-      } finally {
-        setLoading(false);
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/verification/${id}`);
+      const data = await response.json();
+      if (response.ok) {
+        setImageData(data);
+        setFileType(data.type);
+        setContent(data.content);
+        setOriginalName(data.original_name);
+        const imgElement = new window.Image();
+        imgElement.src = `data:image/jpeg;base64,${data.content}`;
+        imgElement.onload = () => {
+          setWidth(imgElement.width);
+          setHeight(imgElement.height);
+        };
+      } else {
+        console.error(data.error || 'Erro ao buscar dados da imagem.');
       }
-    };
-
-    fetchFileData();
-  }, [id]);
+    } catch (error) {
+      console.error('Erro ao buscar dados:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handlePasswordSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-
+    if (!password || !imageData?.new_name) return;
+    setLoading(true);
     try {
-      const response = await fetch(`/api/verification/${id}`, {
+      const response = await fetch(`/api/verification/${imageData.new_name}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password }),
       });
-
+      const data = await response.json();
       if (response.ok) {
-        const data = await response.json();
         setIsPasswordCorrect(true);
-        setError(null);
-        toast.success('Senha verificada com sucesso!');
-
-        setFileData((prev) => (prev ? { ...prev, private: false } : prev));
       } else {
-        const data = await response.json();
         setIsPasswordCorrect(false);
-        setError(data.error || 'Erro na autenticação.');
-        toast.error(data.error || 'Erro na autenticação.');
       }
-    } catch (err) {
-      setError('Erro ao verificar a senha.');
-      toast.error('Erro ao verificar a senha.');
-      console.error(err);
+    } catch (error) {
+      console.error('Erro ao verificar senha:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchImageData();
+  }, [id]);
+
   if (loading) return <Loading />;
-  if (error && !fileData) return <div className="text-red-800 text-center">{error}</div>;
-
-  if (!fileData) {
-    return <div className="text-red-800 text-center">Arquivo não encontrado.</div>;
-  }
-
-  const { format, path, original_name, width, height, private: isPrivate } = fileData;
-  const fileType = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(format)
-    ? 'image'
-    : ['mp4', 'webm', 'avi', 'mov', 'mkv', 'flv', 'wmv'].includes(format)
-    ? 'video'
-    : 'unknown';
-
-  const seoTitle = original_name;
-  const seoDescription = `Confira o arquivo ${original_name} hospedado no Akazz Host.`;
-  const seoImageUrl = fileType === 'image' && !isPrivate ? path : '';
-  const seoImageAlt = fileType === 'image' && !isPrivate ? original_name : '';
-  const seoImageWidth = fileType === 'image' && !isPrivate ? width : 0;
-  const seoImageHeight = fileType === 'image' && !isPrivate ? height : 0;
-
-  if (isPrivate && isPasswordCorrect === null) {
-    return (
-      <motion.div
-        className="flex items-center justify-center min-h-screen p-4"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="shadow-md rounded-lg flex flex-col items-center justify-center">
-          <div className="border border-darkcarbon p-6 rounded-lg w-96 grid">
-            <form onSubmit={handlePasswordSubmit}>
-              <div className="relative mb-4">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Icons name="lock" className="text-mediumslate" />
-                </span>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Insira a senha"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="bg-blackonyx border border-darkcarbon placeholder:text-mediumslate p-2 pl-10 w-full rounded focus:outline-none"
-                  required
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
-                  onClick={() => setShowPassword((prev) => !prev)}
-                >
-                  <Icons name={showPassword ? 'eye_slash' : 'eye'} className="text-mediumslate" />
-                </button>
-              </div>
-              {error && <p className="text-red-800">{error}</p>}
-              <button
-                type="submit"
-                className="bg-blue-500 p-2 rounded w-full mt-4 duration-300 hover:bg-blue-800"
-              >
-                Continuar
-              </button>
-            </form>
-          </div>
-        </div>
-      </motion.div>
-    );
-  }
 
   return (
     <>
       <NextSeo
-        title={seoTitle}
-        description={seoDescription}
-        canonical={`https://akazz.art${router.asPath}`}
-        themeColor="#2b2d31"
+        title={originalName}
         openGraph={{
-          url: `https://akazz.art${router.asPath}`,
-          title: seoTitle,
-          description: seoDescription,
-          images: seoImageUrl
-            ? [
-                {
-                  url: seoImageUrl,
-                  alt: seoImageAlt,
-                  width: seoImageWidth,
-                  height: seoImageHeight,
-                },
-              ]
-            : [],
+          title: originalName,
+          url: `https://akazz.art/${id}`,
+          site_name: `${originalName}`,
         }}
       />
-      <motion.div
-        className="flex items-center justify-center min-h-screen p-4"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="shadow-md rounded-lg flex flex-col items-center justify-center">
-          {fileType === 'image' && (
-            <Image
-              src={path}
-              alt={original_name}
-              width={width}
-              height={height}
-              style={{ maxWidth: '100%', height: 'auto' }}
-            />
+      <motion.div className="flex items-center justify-center min-h-screen p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
+        <div className="shadow-md rounded-lg p-8 w-full max-w-lg">
+          {isPasswordCorrect === null && imageData?.private && (
+            <AnimatePresence>
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.3 }}>
+                <div className="relative mb-4">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center text-muted-foreground">
+                    <Icons name="lock" size="w-6 h-6" />
+                  </div>
+                  <input type={showPassword ? 'text' : 'password'} placeholder="Senha" value={password} onChange={(e) => setPassword(e.target.value)} className="bg-transparent border border-border text-muted-foreground p-2 pl-10 w-full rounded focus:outline-none" required />
+                  <button type="button" className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer" onClick={() => setShowPassword((prev) => !prev)}>
+                    <AnimatePresence>
+                      {showPassword ? (
+                        <motion.div key="eye-slash" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.5 }} className="absolute inset-y-0 right-0 flex items-center justify-center">
+                          <Icons name="eye_slash" size="w-6 h-6" className="mr-2 text-muted-foreground" />
+                        </motion.div>
+                      ) : (
+                        <motion.div key="eye" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.5 }} className="absolute inset-y-0 right-0 flex items-center justify-center">
+                          <Icons name="eye" size="w-6 h-6" className="mr-2 text-muted-foreground" />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </button>
+                </div>
+                <button type="submit" className="bg-primary-750 p-2 rounded w-full mt-4 duration-300 hover:bg-primary-800">Continuar</button>
+              </motion.div>
+            </AnimatePresence>
           )}
-          {fileType === 'video' && (
-            <video controls style={{ maxWidth: '100%', height: 'auto' }}>
-              <source src={path} type={`video/${format}`} />
-            </video>
+          {isPasswordCorrect === false && imageData?.private && <div className="text-red-500">Senha incorreta. Tente novamente.</div>}
+          {isPasswordCorrect === true && imageData?.private && (
+            <div className="flex flex-col items-center justify-center">
+              {fileType === 'image' && content && (
+                <img src={`data:image/jpeg;base64,${content}`} alt={originalName} width={width} height={height} style={{ maxWidth: '100%', height: 'auto' }} />
+              )}
+            </div>
           )}
-          {fileType === 'unknown' && <div>Formato desconhecido</div>}
+          {isPasswordCorrect === null && !imageData?.private && fileType === 'image' && (
+            <div className="flex flex-col items-center justify-center">
+              {content && <img src={`data:image/jpeg;base64,${content}`} alt={originalName} width={width} height={height} style={{ maxWidth: '100%', height: 'auto' }} />}
+            </div>
+          )}
         </div>
       </motion.div>
-
-      <ToastContainer position="bottom-right" autoClose={3000} limit={4} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="dark" />
     </>
   );
 };
 
-export default FilePage;
+export default ImagePage;

@@ -1,96 +1,86 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import bcrypt from 'bcryptjs'; // Biblioteca para hash de senhas
-import { query } from '@/lib/db'; // Função para consulta ao banco de dados
+import { query } from '@/lib/db';
+import bcrypt from 'bcryptjs';
+import compression from 'compression';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+const runMiddleware = (req: NextApiRequest, res: NextApiResponse, fn: Function) => {
+  return new Promise((resolve, reject) => {
+    fn(req, res, (result: any) => {
+      if (result instanceof Error) {
+        return reject(result);
+      }
+      return resolve(result);
+    });
+  });
+};
+
+const verificationHandler = async (req: NextApiRequest, res: NextApiResponse) => {
+  await runMiddleware(req, res, compression());
+
   const { id } = req.query;
 
-  // Verificar se o ID é válido
-  if (typeof id !== 'string') {
-    return res.status(400).json({ error: 'ID inválido' });
+  if (!id) {
+    return res.status(400).json({ error: 'ID da imagem não fornecido.' });
   }
 
-  // Tratamento para o método GET (Obter informações do arquivo)
   if (req.method === 'GET') {
     try {
       const result = await query(
-        `SELECT id, original_name, format, created_at, private, width, height, password
-         FROM files
-         WHERE id = $1`,
+        `SELECT id, original_name, new_name, content, private, password FROM images WHERE new_name = $1`,
         [id]
       );
 
-      if (result.rows.length === 0) {
-        return res.status(404).json({ error: 'Arquivo não encontrado' });
+      const image = result.rows[0];
+
+      if (!image) {
+        return res.status(404).json({ error: 'Imagem não encontrada.' });
       }
 
-      const file = result.rows[0];
-
-      // Construir o caminho do arquivo com base no formato
-      const path = `/${file.id}.${file.format}`;
+      const fileType = 'image';
 
       return res.status(200).json({
-        id: file.id,
-        original_name: file.original_name,
-        format: file.format,
-        created_at: file.created_at,
-        private: file.private,
-        width: file.width,
-        height: file.height,
-        path,
+        id: image.id,
+        original_name: image.original_name,
+        new_name: image.new_name,
+        content: image.content.toString('base64'),
+        type: fileType,
+        private: image.private,
+        password: image.password,
       });
+
     } catch (error) {
-      console.error('Erro ao buscar arquivo no banco de dados:', error);
-      return res.status(500).json({ error: 'Erro interno no servidor' });
+      console.error('Erro ao verificar imagem:', error);
+      return res.status(500).json({ error: 'Erro ao buscar dados da imagem.' });
     }
-  }
-
-  // Tratamento para o método POST (Verificar senha)
-  if (req.method === 'POST') {
-    const { password } = req.body;
-
-    // Verificar se a senha foi fornecida
-    if (!password) {
-      return res.status(400).json({ error: 'Senha necessária' });
-    }
-
+  } else if (req.method === 'POST') {
     try {
+      const { password } = req.body;
       const result = await query(
-        `SELECT id, password, private
-         FROM files
-         WHERE id = $1`,
+        `SELECT password FROM images WHERE new_name = $1`,
         [id]
       );
 
-      if (result.rows.length === 0) {
-        return res.status(404).json({ error: 'Arquivo não encontrado' });
+      const image = result.rows[0];
+
+      if (!image || !image.password) {
+        return res.status(404).json({ error: 'Imagem não encontrada ou não é privada.' });
       }
 
-      const file = result.rows[0];
+      const isPasswordCorrect = await bcrypt.compare(password, image.password);
 
-      // Arquivo público não requer senha
-      if (!file.private) {
-        console.log(`Acesso concedido a arquivo público: ${file.original_name}`);
-        return res.status(200).json({ message: 'Acesso concedido a arquivo público' });
+      if (isPasswordCorrect) {
+        return res.status(200).json({ success: true });
+      } else {
+        return res.status(403).json({ error: 'Senha incorreta.' });
       }
 
-      // Verificar se a senha está correta
-      const isPasswordCorrect = await bcrypt.compare(password, file.password);
-
-      if (!isPasswordCorrect) {
-        console.log(`Senha incorreta para o arquivo: ${file.original_name}`);
-        return res.status(401).json({ error: 'Senha incorreta' });
-      }
-
-      // Senha correta
-      console.log(`Senha correta para o arquivo: ${file.original_name}`);
-      return res.status(200).json({ message: 'Acesso concedido a arquivo privado' });
     } catch (error) {
-      console.error('Erro ao verificar a senha:', error);
-      return res.status(500).json({ error: 'Erro interno no servidor' });
+      console.error('Erro ao verificar senha:', error);
+      return res.status(500).json({ error: 'Erro ao verificar senha.' });
     }
+  } else {
+    return res.status(405).json({ error: 'Método não permitido.' });
   }
+};
 
-  // Retornar erro para métodos não permitidos
-  return res.status(405).json({ error: 'Método não permitido' });
-}
+export default verificationHandler;
