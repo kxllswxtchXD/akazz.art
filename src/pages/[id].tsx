@@ -25,6 +25,7 @@ const ImagePage = () => {
   const [fileType, setFileType] = useState('');
   const [content, setContent] = useState<string>('');
   const [originalName, setOriginalName] = useState('');
+  const [new_name, setNewname] = useState('');
   const [width, setWidth] = useState<number>(0);
   const [height, setHeight] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
@@ -41,6 +42,7 @@ const ImagePage = () => {
         setFileType(type);
         setContent(content);
         setOriginalName(original_name);
+        setNewname(new_name)
 
         const imgElement = new window.Image();
         imgElement.src = `data:image/jpeg;base64,${content}`;
@@ -88,7 +90,15 @@ const ImagePage = () => {
 
   return (
     <>
-      <NextSeo title={originalName} openGraph={{ title: originalName, url: `https://akazz.art/${id}`, site_name: `${originalName}` }} />
+      <NextSeo 
+        title={originalName}
+        description={new_name}
+        openGraph={{
+          title: originalName,
+          description: new_name,
+          url: `https://akazz.art/${id}`,
+        }}
+      />
       <motion.div className="flex items-center justify-center min-h-screen p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
         <div className="shadow-md rounded-lg p-8 w-full max-w-lg">
           {isPasswordCorrect === null && imageData?.private && (

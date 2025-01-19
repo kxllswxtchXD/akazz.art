@@ -7,12 +7,11 @@ export default function App({ Component, pageProps }: AppProps) {
     <>
       <DefaultSeo
         title="• Akazz"
-        description="Descrição padrão do meu aplicativo."
+        description="Armazene e compartilhe suas imagens de forma rápida e segura."
         openGraph={{
           type: "website",
           locale: "pt_BR",
           url: "https://akazz.art",
-          site_name: "• Akazz",
         }}
       />
       <Component {...pageProps} />
