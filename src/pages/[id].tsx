@@ -5,11 +5,19 @@ import { NextSeo } from 'next-seo';
 import Loading from '@/components/Loading';
 import Icons from '@/components/Icons';
 
+interface ImageData {
+  type: string;
+  content: string;
+  original_name: string;
+  new_name: string;
+  private: boolean;
+}
+
 const ImagePage = () => {
   const router = useRouter();
   const { id } = router.query;
 
-  const [imageData, setImageData] = useState<any>(null);
+  const [imageData, setImageData] = useState<ImageData | null>(null);
   const [password, setPassword] = useState('');
   const [isPasswordCorrect, setIsPasswordCorrect] = useState<boolean | null>(null);
   const [fileType, setFileType] = useState('');
@@ -25,20 +33,20 @@ const ImagePage = () => {
     setLoading(true);
     try {
       const response = await fetch(`/api/verification/${id}`);
-      const data = await response.json();
+      const result = await response.json();
       if (response.ok) {
-        setImageData(data);
-        setFileType(data.type);
-        setContent(data.content);
-        setOriginalName(data.original_name);
+        setImageData(result);
+        setFileType(result.type);
+        setContent(result.content);
+        setOriginalName(result.original_name);
         const imgElement = new window.Image();
-        imgElement.src = `data:image/jpeg;base64,${data.content}`;
+        imgElement.src = `data:image/jpeg;base64,${result.content}`;
         imgElement.onload = () => {
           setWidth(imgElement.width);
           setHeight(imgElement.height);
         };
       } else {
-        console.error(data.error || 'Erro ao buscar dados da imagem.');
+        console.error(result.error || 'Erro ao buscar dados da imagem.');
       }
     } catch (error) {
       console.error('Erro ao buscar dados:', error);
@@ -57,7 +65,7 @@ const ImagePage = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password }),
       });
-      const data = await response.json();
+      const result = await response.json();
       if (response.ok) {
         setIsPasswordCorrect(true);
       } else {
@@ -91,26 +99,28 @@ const ImagePage = () => {
           {isPasswordCorrect === null && imageData?.private && (
             <AnimatePresence>
               <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.3 }}>
-                <div className="relative mb-4">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center text-muted-foreground">
-                    <Icons name="lock" size="w-6 h-6" />
+                <form onSubmit={handlePasswordSubmit}>
+                  <div className="relative mb-4">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center text-muted-foreground">
+                      <Icons name="lock" size="w-6 h-6" />
+                    </div>
+                    <input type={showPassword ? 'text' : 'password'} placeholder="Senha" value={password} onChange={(e) => setPassword(e.target.value)} className="bg-transparent border border-border text-muted-foreground p-2 pl-10 w-full rounded focus:outline-none" required />
+                    <button type="button" className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer" onClick={() => setShowPassword((prev) => !prev)}>
+                      <AnimatePresence>
+                        {showPassword ? (
+                          <motion.div key="eye-slash" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.5 }} className="absolute inset-y-0 right-0 flex items-center justify-center">
+                            <Icons name="eye_slash" size="w-6 h-6" className="mr-2 text-muted-foreground" />
+                          </motion.div>
+                        ) : (
+                          <motion.div key="eye" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.5 }} className="absolute inset-y-0 right-0 flex items-center justify-center">
+                            <Icons name="eye" size="w-6 h-6" className="mr-2 text-muted-foreground" />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </button>
                   </div>
-                  <input type={showPassword ? 'text' : 'password'} placeholder="Senha" value={password} onChange={(e) => setPassword(e.target.value)} className="bg-transparent border border-border text-muted-foreground p-2 pl-10 w-full rounded focus:outline-none" required />
-                  <button type="button" className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer" onClick={() => setShowPassword((prev) => !prev)}>
-                    <AnimatePresence>
-                      {showPassword ? (
-                        <motion.div key="eye-slash" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.5 }} className="absolute inset-y-0 right-0 flex items-center justify-center">
-                          <Icons name="eye_slash" size="w-6 h-6" className="mr-2 text-muted-foreground" />
-                        </motion.div>
-                      ) : (
-                        <motion.div key="eye" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.5 }} className="absolute inset-y-0 right-0 flex items-center justify-center">
-                          <Icons name="eye" size="w-6 h-6" className="mr-2 text-muted-foreground" />
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </button>
-                </div>
-                <button type="submit" className="bg-primary-750 p-2 rounded w-full mt-4 duration-300 hover:bg-primary-800">Continuar</button>
+                  <button type="submit" className="bg-primary-750 p-2 rounded w-full mt-4 duration-300 hover:bg-primary-800">Continuar</button>
+                </form>
               </motion.div>
             </AnimatePresence>
           )}
