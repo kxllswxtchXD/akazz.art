@@ -72,7 +72,6 @@ const ImagePage = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password }),
       });
-      const data = await response.json();
       if (response.ok) {
         setIsPasswordCorrect(true);
       } else {

@@ -44,19 +44,19 @@ const uploadHandler = async (req: NextApiRequest, res: NextApiResponse) => {
         hashedPassword = await bcrypt.hash(password, 10);
       }
 
+      // Removendo a variável 'id' que não é usada
       const result = await query(
         `
           INSERT INTO images (original_name, new_name, content, private, password)
           VALUES ($1, $2, $3, $4, $5)
-          RETURNING id, new_name
+          RETURNING new_name
         `,
         [originalName, newName, buffer, isPrivate, hashedPassword]
       );
 
-      const { id, new_name } = result.rows[0];
+      const { new_name } = result.rows[0];
 
       const host = req.headers.host;
-
       const fileUrl = `https://${host}/${new_name}`;
 
       return res.status(200).json({ link: fileUrl });
