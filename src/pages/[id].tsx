@@ -1,3 +1,4 @@
+// src/pages/[id].tsx
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -35,19 +36,20 @@ const ImagePage = () => {
     try {
       const response = await fetch(`/api/verification/${id}`);
       if (response.ok) {
-        const data = await response.json();
-        setImageData(data);
-        setFileType(data.type);
-        setContent(data.content);
-        setOriginalName(data.original_name);
+        const { type, content, original_name, new_name, private: isPrivate } = await response.json();
+        setImageData({ type, content, original_name, new_name, private: isPrivate });
+        setFileType(type);
+        setContent(content);
+        setOriginalName(original_name);
+
         const imgElement = new window.Image();
-        imgElement.src = `data:image/jpeg;base64,${data.content}`;
+        imgElement.src = `data:image/jpeg;base64,${content}`;
         imgElement.onload = () => {
           setWidth(imgElement.width);
           setHeight(imgElement.height);
         };
       } else {
-        console.error((await response.json()).error || 'Erro ao buscar dados da imagem.');
+        console.error('Erro ao buscar dados da imagem.');
       }
     } catch (error) {
       console.error('Erro ao buscar dados:', error);

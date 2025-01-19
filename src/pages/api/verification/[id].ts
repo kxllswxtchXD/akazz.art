@@ -1,22 +1,9 @@
+// src/pages/api/verification/[id].ts
 import { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '@/lib/db';
 import bcrypt from 'bcryptjs';
-import compression from 'compression';
-
-const runMiddleware = (req: NextApiRequest, res: NextApiResponse, fn: Function) => {
-  return new Promise((resolve, reject) => {
-    fn(req, res, (result: any) => {
-      if (result instanceof Error) {
-        return reject(result);
-      }
-      return resolve(result);
-    });
-  });
-};
 
 const verificationHandler = async (req: NextApiRequest, res: NextApiResponse) => {
-  await runMiddleware(req, res, compression());
-
   const { id } = req.query;
 
   if (!id) {
