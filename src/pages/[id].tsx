@@ -34,8 +34,8 @@ const ImagePage = () => {
     setLoading(true);
     try {
       const response = await fetch(`/api/verification/${id}`);
-      const data = await response.json();
       if (response.ok) {
+        const data = await response.json();
         setImageData(data);
         setFileType(data.type);
         setContent(data.content);
@@ -47,14 +47,14 @@ const ImagePage = () => {
           setHeight(imgElement.height);
         };
       } else {
-        console.error(data.error || 'Erro ao buscar dados da imagem.');
+        console.error((await response.json()).error || 'Erro ao buscar dados da imagem.');
       }
     } catch (error) {
       console.error('Erro ao buscar dados:', error);
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id]);  
 
   useEffect(() => {
     fetchImageData();
