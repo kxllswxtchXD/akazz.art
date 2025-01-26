@@ -92,10 +92,8 @@ const ImagePage = () => {
     <>
       <NextSeo 
         title={originalName}
-        description={new_name}
         openGraph={{
           title: originalName,
-          description: new_name,
           url: `https://akazz.art/${id}`,
         }}
       />
