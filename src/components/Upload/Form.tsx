@@ -68,7 +68,7 @@ const UploadForm = () => {
 
         <div className="flex items-center">
           <input type="checkbox" id="private" checked={isPrivate} onChange={() => setIsPrivate(!isPrivate)} className="w-4 h-4" />
-          <label htmlFor="private" className="ml-2 text-muted-foreground">Privado</label>
+          <label htmlFor="private" className="ml-2 text-muted-foreground">Privar</label>
         </div>
 
         <AnimatePresence>

@@ -2,7 +2,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { motion, AnimatePresence } from 'framer-motion';
-import { NextSeo } from 'next-seo';
 import Loading from '@/components/Loading';
 import Icons from '@/components/Icons';
 import Image from 'next/image';
@@ -90,13 +89,6 @@ const ImagePage = () => {
 
   return (
     <>
-      <NextSeo 
-        title={originalName}
-        openGraph={{
-          title: originalName,
-          url: `https://akazz.art/${id}`,
-        }}
-      />
       <motion.div className="flex items-center justify-center min-h-screen p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
         <div className="shadow-md rounded-lg p-8 w-full max-w-lg">
           {isPasswordCorrect === null && imageData?.private && (
