@@ -24,7 +24,6 @@ const ImagePage = () => {
   const [fileType, setFileType] = useState('');
   const [content, setContent] = useState<string>('');
   const [originalName, setOriginalName] = useState('');
-  const [new_name, setNewname] = useState('');
   const [width, setWidth] = useState<number>(0);
   const [height, setHeight] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
@@ -41,7 +40,6 @@ const ImagePage = () => {
         setFileType(type);
         setContent(content);
         setOriginalName(original_name);
-        setNewname(new_name)
 
         const imgElement = new window.Image();
         imgElement.src = `data:image/jpeg;base64,${content}`;
